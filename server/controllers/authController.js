@@ -2,7 +2,9 @@ const userSchema = require("../models/userSchema");
 const { sendEmail } = require("../services/emailService");
 const { generateOTP } = require("../services/helper");
 const { isValidEmail, isStrongPassword } = require("../services/validation");
-const { responseHandler } = require("../Utils/responseHandler")
+const { responseHandler } = require("../Utils/responseHandler");
+const { emailVerifyTem } =require("../services/emailVerifyTem")
+
 const registration = async (req, res) => {
     try {
         const { fullName, email, password, phone, address } = req.body;
@@ -19,29 +21,66 @@ const registration = async (req, res) => {
             password,
             phone,
             address,
-            generatedOtp,
+            otp: generatedOtp,
             otpExpires: Date.now() + 2 * 60 * 1000,
         })
-        sendEmail({email, subject: "Email Varification", generatedOtp })
+        sendEmail({email, subject: "Email Varification", generatedOtp, templete: emailVerifyTem, fullName })
         user.save()
-        responseHandler(res, 201, "User signed up successfully, please verify your email", true);
+        responseHandler(res, 201, "User signed up successfully, Please verify your email before logging in.", true);
     } catch (error) {
         responseHandler(res, 500,"Internal Server issue" );
     }
 }
 const verification = async (req, res) => {
     try {
-        const { generatedOtp, email } = req.body;
-        if(!generatedOtp) return responseHandler(res, 400," OTP is Required");
+        const { otp, email } = req.body;
+        if(!otp) return responseHandler(res, 400," OTP is Required");
         if(!email) return responseHandler(res, 400,"Unauthorized User");
-        const user = await userShema.findOne({email})
-
+        const user = await userSchema.findOne({email, otp: Number(otp), otpExpires: { $gt: new Date() }, isVerified: false, })
+        if(!user) return responseHandler(res, 400,"Invalid or expired OTP.");
+        user.isVerified = true;
+        user.otp = null;
+        user.save()
         responseHandler(res, 201, "Varificaation successfully", true);
     } catch (error) {
+        responseHandler(res, 500,"Internal Server issue");
+    }
+}
+const resendOTP = async (req, res) => {
+    try {
+        const {email} = req.body;
+        if(!email) return responseHandler(res, 400,"Email is required");
+        const user = await userSchema.findOne({email, isVerified: false});
+        if(!user) return responseHandler(res, 400,"Invalid Request");
+        if (user.otpExpires && user.otpExpires > Date.now() - 60000) {
+        return responseHandler(res, 429, "Please wait before requesting a new OTP");
+        }
+        const generatedOtp = generateOTP();
+        user.otp = generatedOtp;
+        user.otpExpires = Date.now() + 2 * 60 * 1000;
+        user.save()
+        sendEmail({email, subject: "Email Varification", generatedOtp, templete: emailVerifyTem, fullName:user.fullName })
+        responseHandler(res, 200,"OTP send you mail successfully", true);
+        
+    } catch (error) {
+        responseHandler(res, 500,"Internal Server issue");
         console.log(error);
     }
 }
-
-module.exports = {
-    registration, verification,
-};
+const login = async (req, res) =>{
+    try {
+        const {email, password} = req.body;
+        if (!email) return res.status(400).send({ message: "Email is required" });
+        if (!isValidEmail(email)) return responseHandler(res, 400, "Enter a valid email address" );
+        if (!password) return responseHandler(res, 400, "Password is required");
+        const existingUser = await userSchema.findOne({ email });
+        if (!existingUser) return responseHandler(res, 400, "Invalid email or password" );
+        if (!existingUser.isVerified) return responseHandler(res, 400, "Please verify your email before logging in");
+        const isMatch = await existingUser.comparePassword(password);
+        if(!isMatch) return responseHandler(res, 400, "Invalid email or password" );
+        responseHandler(res, 201,"Welcome, your login was successful.", true);
+    } catch (error) {
+        responseHandler(res, 500,"Internal Server issue");
+    }
+}
+module.exports = { registration, verification, resendOTP, login };

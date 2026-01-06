@@ -12,8 +12,4 @@ const isStrongPassword = (password) => {
   return strongPassRegex.test(password);
 };
 
-module.exports = {
-  isValidUsername,
-  isValidEmail,
-  isStrongPassword,
-};
+module.exports = { isValidUsername, isValidEmail, isStrongPassword, };

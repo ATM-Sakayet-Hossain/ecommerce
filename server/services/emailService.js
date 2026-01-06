@@ -11,12 +11,12 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendEmail = async ({ email, subject, generatedOtp }) => {
+const sendEmail = async ({ email, subject, generatedOtp, templete, fullName }) => {
   await transporter.sendMail({
     from: '"E-Commerce" <process.env.MAIL_USERNAME>',
     to: email,
     subject: subject,
-    html: `<b>Email verification OTP: ${generatedOtp}</b>`, // HTML version of the message
+    html: templete({generatedOtp, fullName}) // HTML version of the message
   });
 };
 
