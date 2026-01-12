@@ -1,3 +1,4 @@
+const bcrypt = require("bcrypt");
 const userSchema = require("../models/userSchema");
 const { sendEmail } = require("../services/emailService");
 const {
@@ -5,18 +6,26 @@ const {
   generateAccessToken,
   generateRefreshToken,
   generateResetPassToken,
+  VerifiedToken,
 } = require("../services/helper");
 const { isValidEmail, isStrongPassword } = require("../services/validation");
 const { responseHandler } = require("../Utils/responseHandler");
-const { emailVerifyTem, resetPassEmailTemp } = require("../services/emailVerifyTem");
+const {
+  emailVerifyTem,
+  resetPassEmailTemp,
+} = require("../services/emailVerifyTem");
 
 const registration = async (req, res) => {
   try {
-    const { fullName, email, password, phone, address } = req.body;
+    const { fullName, email, password, phone, address, confirmPassword } = req.body;
     if (!email) return res.status(400).send({ message: "Email is required" });
     if (!isValidEmail(email))
       return responseHandler(res, 400, "Invalid email format");
     if (!password) return responseHandler(res, 400, "Password is required");
+    if (!confirmPassword)
+      return responseHandler(res, 200, "Confirm Password is required.");
+    if (password != confirmPassword)
+      return responseHandler(res, 200, "Please provide and confirm your new password.");
     if (!isStrongPassword(password))
       return responseHandler(
         res,
@@ -52,6 +61,7 @@ const registration = async (req, res) => {
     );
   } catch (error) {
     responseHandler(res, 500, "Something went wrong. Please try again later");
+    console.log(error);
   }
 };
 const verification = async (req, res) => {
@@ -152,19 +162,69 @@ const forgetPass = async (req, res) => {
       return responseHandler(res, 400, "Email is not registered");
     const resetPassword = generateResetPassToken(existingUser);
     const resetPasswordLink = `${
-      process.env.CLIENT_URL || "http://localhost:3000"
-    }/restpass/?sec=${resetPassword}`;
+      process.env.CLIENT_URL || "http://localhost:1993"
+    }/auth/resetPass/?sec=${resetPassword}`;
     sendEmail({
       email,
       subject: "Reset Your Password",
       generatedOtp: resetPasswordLink,
       templete: resetPassEmailTemp,
-      fullName: existingUser.fullName
+      fullName: existingUser.fullName,
     });
-    responseHandler(res, 200, "A reset password link has been sent to your email", true);
+    responseHandler(
+      res,
+      200,
+      "A reset password link has been sent to your email",
+      true
+    );
+  } catch (error) {
+    responseHandler(res, 500, "Something went wrong. Please try again later");
+  }
+};
+const resetPass = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { newPassword, confirmPassword } = req.body;
+    if (!token)
+      return responseHandler(
+        res,
+        400,
+        "Check your email for the password reset link"
+      );
+    if (!newPassword)
+      return responseHandler(res, 200, "New password is required.");
+    if (!confirmPassword)
+      return responseHandler(res, 200, "Confirm Password is required.");
+    if (newPassword != confirmPassword)
+      return responseHandler(res, 200, "Please provide and confirm your new password.");
+    const decoded = await VerifiedToken(token);
+    if (!decoded)
+      return responseHandler(
+        res,
+        400,
+        "This reset link is invalid or has expired."
+      );
+    const user = await userSchema.findOne({ email: decoded.email });
+    if (!user) return responseHandler(res, 400, "User not found.");
+    const hashedPassword = await bcrypt.hash(newPassword, 10)
+    user.password = hashedPassword;
+    user.save();
+    responseHandler(
+      res,
+      200,
+      "Your password has been reset successfully. You can now log in.",
+      true
+    );
   } catch (error) {
     responseHandler(res, 500, "Something went wrong. Please try again later");
     console.log(error);
   }
 };
-module.exports = { registration, verification, resendOTP, login, forgetPass };
+module.exports = {
+  registration,
+  verification,
+  resendOTP,
+  login,
+  forgetPass,
+  resetPass,
+};
