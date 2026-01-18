@@ -104,7 +104,7 @@ const resetPassEmailTemp = ({ generatedOtp, fullName }) => {
                 </p>
 
                 <p style="margin:0 0 15px 0;">
-                  This link will expire in <strong>24 hours</strong>. If you did not request a password reset, you can safely ignore this email.
+                  This link will expire in <strong>5 minites</strong>. If you did not request a password reset, you can safely ignore this email.
                 </p>
 
                 <p style="margin:0;">

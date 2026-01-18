@@ -6,7 +6,7 @@ const {
   generateAccessToken,
   generateRefreshToken,
   generateResetPassToken,
-  VerifiedToken,
+  hashResetToken,
 } = require("../services/helper");
 const { isValidEmail, isStrongPassword } = require("../services/validation");
 const { responseHandler } = require("../Utils/responseHandler");
@@ -160,10 +160,13 @@ const forgetPass = async (req, res) => {
     const existingUser = await userSchema.findOne({ email });
     if (!existingUser)
       return responseHandler(res, 400, "Email is not registered");
-    const resetPassword = generateResetPassToken(existingUser);
+    const {resetToken, hashedToken} = generateResetPassToken();
+    existingUser.resetPassToken = hashedToken;
+    existingUser.resetExpires = Date.now() + 5 * 60 * 1000;
+    existingUser.save()
     const resetPasswordLink = `${
-      process.env.CLIENT_URL || "http://localhost:1993"
-    }/auth/resetPass/?sec=${resetPassword}`;
+      process.env.CLIENT_URL || "http://localhost:3000"
+    }/auth/resetPass?sec=${resetToken}`;
     sendEmail({
       email,
       subject: "Reset Your Password",
@@ -181,34 +184,28 @@ const forgetPass = async (req, res) => {
     responseHandler(res, 500, "Something went wrong. Please try again later");
   }
 };
-const resetPass = async (req, res) => {
+const resetPassword = async (req, res) => {
   try {
-    const { token } = req.params;
-    const { newPassword, confirmPassword } = req.body;
-    if (!token)
-      return responseHandler(
-        res,
-        400,
-        "Check your email for the password reset link"
-      );
+    const {newPassword, confirmPassword} = req.body;
+    // const {token} = req.params.token;
+    const token = req.query.sec;
+    console.log(token);
     if (!newPassword)
-      return responseHandler(res, 200, "New password is required.");
+      return responseHandler(res, 400, "New password is required.");
     if (!confirmPassword)
-      return responseHandler(res, 200, "Confirm Password is required.");
+      return responseHandler(res, 400, "Confirm Password is required.");
     if (newPassword != confirmPassword)
-      return responseHandler(res, 200, "Please provide and confirm your new password.");
-    const decoded = await VerifiedToken(token);
-    if (!decoded)
-      return responseHandler(
-        res,
-        400,
-        "This reset link is invalid or has expired."
-      );
-    const user = await userSchema.findOne({ email: decoded.email });
-    if (!user) return responseHandler(res, 400, "User not found.");
-    const hashedPassword = await bcrypt.hash(newPassword, 10)
-    user.password = hashedPassword;
-    user.save();
+      return responseHandler(res, 400, "Please provide and confirm your new password.");
+    const hashedToken = hashResetToken(token);
+    const existingUser = await userSchema.findOne({
+      resetPassToken: hashedToken,
+      resetExpires: {$gt: Date.now()}
+    })
+    if(!existingUser) return responseHandler(res, 400, "Invalid Request")
+    existingUser.password = newPassword;
+    existingUser.resetPassToken = undefined;
+    existingUser.resetExpires = undefined;
+    existingUser.save()
     responseHandler(
       res,
       200,
@@ -216,15 +213,14 @@ const resetPass = async (req, res) => {
       true
     );
   } catch (error) {
-    responseHandler(res, 500, "Something went wrong. Please try again later");
     console.log(error);
   }
-};
+}
 module.exports = {
   registration,
   verification,
   resendOTP,
   login,
   forgetPass,
-  resetPass,
+  resetPassword,
 };
