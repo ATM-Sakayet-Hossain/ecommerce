@@ -17,7 +17,8 @@ const {
 
 const registration = async (req, res) => {
   try {
-    const { fullName, email, password, phone, address, confirmPassword } = req.body;
+    const { fullName, email, password, phone, address, confirmPassword } =
+      req.body;
     if (!email) return res.status(400).send({ message: "Email is required" });
     if (!isValidEmail(email))
       return responseHandler(res, 400, "Invalid email format");
@@ -25,12 +26,16 @@ const registration = async (req, res) => {
     if (!confirmPassword)
       return responseHandler(res, 200, "Confirm Password is required.");
     if (password != confirmPassword)
-      return responseHandler(res, 200, "Please provide and confirm your new password.");
+      return responseHandler(
+        res,
+        200,
+        "Please provide and confirm your new password.",
+      );
     if (!isStrongPassword(password))
       return responseHandler(
         res,
         400,
-        "Password must be at least 6 characters long"
+        "Password must be at least 6 characters long",
       );
     const existingUser = await userSchema.findOne({ email });
     if (existingUser)
@@ -57,7 +62,7 @@ const registration = async (req, res) => {
       res,
       201,
       "User signed up successfully, Please verify your email before logging in.",
-      true
+      true,
     );
   } catch (error) {
     responseHandler(res, 500, "Something went wrong. Please try again later");
@@ -94,7 +99,7 @@ const resendOTP = async (req, res) => {
       return responseHandler(
         res,
         429,
-        "Please wait before requesting a new OTP"
+        "Please wait before requesting a new OTP",
       );
     }
     const generatedOtp = generateOTP();
@@ -128,7 +133,7 @@ const login = async (req, res) => {
       return responseHandler(
         res,
         400,
-        "Please verify your email before logging in"
+        "Please verify your email before logging in",
       );
     const isMatch = await existingUser.comparePassword(password);
     if (!isMatch) return responseHandler(res, 400, "Invalid email or password");
@@ -160,10 +165,10 @@ const forgetPass = async (req, res) => {
     const existingUser = await userSchema.findOne({ email });
     if (!existingUser)
       return responseHandler(res, 400, "Email is not registered");
-    const {resetToken, hashedToken} = generateResetPassToken();
+    const { resetToken, hashedToken } = generateResetPassToken();
     existingUser.resetPassToken = hashedToken;
     existingUser.resetExpires = Date.now() + 5 * 60 * 1000;
-    existingUser.save()
+    existingUser.save();
     const resetPasswordLink = `${
       process.env.CLIENT_URL || "http://localhost:3000"
     }/auth/resetPass?sec=${resetToken}`;
@@ -178,7 +183,7 @@ const forgetPass = async (req, res) => {
       res,
       200,
       "A reset password link has been sent to your email",
-      true
+      true,
     );
   } catch (error) {
     responseHandler(res, 500, "Something went wrong. Please try again later");
@@ -186,7 +191,7 @@ const forgetPass = async (req, res) => {
 };
 const resetPassword = async (req, res) => {
   try {
-    const {newPassword, confirmPassword} = req.body;
+    const { newPassword, confirmPassword } = req.body;
     // const {token} = req.params.token;
     const token = req.query.sec;
     console.log(token);
@@ -195,27 +200,65 @@ const resetPassword = async (req, res) => {
     if (!confirmPassword)
       return responseHandler(res, 400, "Confirm Password is required.");
     if (newPassword != confirmPassword)
-      return responseHandler(res, 400, "Please provide and confirm your new password.");
+      return responseHandler(
+        res,
+        400,
+        "Please provide and confirm your new password.",
+      );
     const hashedToken = hashResetToken(token);
     const existingUser = await userSchema.findOne({
       resetPassToken: hashedToken,
-      resetExpires: {$gt: Date.now()}
-    })
-    if(!existingUser) return responseHandler(res, 400, "Invalid Request")
+      resetExpires: { $gt: Date.now() },
+    });
+    if (!existingUser) return responseHandler(res, 400, "Invalid Request");
     existingUser.password = newPassword;
     existingUser.resetPassToken = undefined;
     existingUser.resetExpires = undefined;
-    existingUser.save()
+    existingUser.save();
     responseHandler(
       res,
       200,
       "Your password has been reset successfully. You can now log in.",
-      true
+      true,
     );
   } catch (error) {
-    console.log(error);
+    responseHandler(res, 500, "Something went wrong. Please try again later");
   }
-}
+};
+const getprofile = async (req, res) => {
+  try {
+    const userProfile = await userSchema
+      .findById(req.user._id)
+      .select(
+        "-password -otp -otpExpires -resetPassToken -resetExpires -updatedAt",
+      );
+    if (!userProfile) return responseHandler(res, 400, "Invalid Request");
+    responseHandler(res, 200, "", true, userProfile);
+  } catch (error) {
+    responseHandler(res, 500, "Something went wrong. Please try again later");
+  }
+};
+const updateUserProfile = async (req, res) => {
+  try {
+    const { fullName, phone, address } = req.body;
+    const userId = req.user._id;
+    const updateFields = {};
+    if (avatar) updateFields.user.avatar = avatar;
+    if (fullName) updateFields.fullName = fullName;
+    if (phone) updateFields.phone = phone;
+    if (address) updateFields.address = address;
+    const user = await userSchema
+      .findById(req.user._id)
+      .select(
+        "-password -otp -otpExpires -resetPassToken -resetExpires -updatedAt",
+      );
+    responseHandler(res, 200, "", true, user);
+  } catch (error) {
+    console.log(error);
+    responseHandler(res, 500, "Something went wrong. Please try again later");
+  }
+};
+
 module.exports = {
   registration,
   verification,
@@ -223,4 +266,6 @@ module.exports = {
   login,
   forgetPass,
   resetPassword,
+  getprofile,
+  updateUserProfile,
 };
