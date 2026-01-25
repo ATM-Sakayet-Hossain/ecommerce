@@ -7,6 +7,7 @@ const {
   generateRefreshToken,
   generateResetPassToken,
   hashResetToken,
+  VerifiedToken,
 } = require("../services/helper");
 const { isValidEmail, isStrongPassword } = require("../services/validation");
 const { responseHandler } = require("../Utils/responseHandler");
@@ -14,6 +15,7 @@ const {
   emailVerifyTem,
   resetPassEmailTemp,
 } = require("../services/emailVerifyTem");
+const { deleteFromCloudinary, uploadToCloudinary } = require("../services/cloudinaryService");
 
 const registration = async (req, res) => {
   try {
@@ -242,22 +244,45 @@ const updateUserProfile = async (req, res) => {
   try {
     const { fullName, phone, address } = req.body;
     const userId = req.user._id;
-    const updateFields = {};
-    if (avatar) updateFields.user.avatar = avatar;
-    if (fullName) updateFields.fullName = fullName;
-    if (phone) updateFields.phone = phone;
-    if (address) updateFields.address = address;
+    const avatar = req.file;
     const user = await userSchema
-      .findById(req.user._id)
+      .findById(userId)
       .select(
         "-password -otp -otpExpires -resetPassToken -resetExpires -updatedAt",
       );
+    if (avatar){
+      const imgPublicId = user.avatar.split("/").pop().split(".")[0];
+      deleteFromCloudinary(`avatar/${imgPublicId}`)
+      const imgRes = await uploadToCloudinary(avatar, "avatar")
+      user.avatar = imgRes.secure_url;
+    }
+    if (fullName) user.fullName = fullName;
+    if (phone) user.phone = phone;
+    if (address) user.address = address;
+    user.save();
     responseHandler(res, 200, "", true, user);
   } catch (error) {
     console.log(error);
     responseHandler(res, 500, "Something went wrong. Please try again later");
   }
 };
+const refreshAccessToken = async (req, res) => {
+  try {
+    const refToken = req.cookies?.["X-RF-Token"] || req.header.authorization;
+    if(!refToken) return responseHandler(res, 400, "time is Expair");
+    const decoded = VerifiedToken(refToken)
+    if(!decoded) return;
+    const accToken = generateAccessToken(decoded);
+    res.cookie("X-AS-Token", accToken, {
+      httpOnly: false, // Not accessible by client-side JS
+      secure: false, // Only sent over HTTPS
+      maxAge: 3600000, // Expires in 1 hour (in milliseconds)
+      // sameSite: 'Strict' // Only send for same-site requests
+    }).send({success: true});
+  } catch (error) {
+    responseHandler(res, 500, "Something went wrong. Please try again later");
+  }
+}
 
 module.exports = {
   registration,
@@ -268,4 +293,5 @@ module.exports = {
   resetPassword,
   getprofile,
   updateUserProfile,
+  refreshAccessToken,
 };
