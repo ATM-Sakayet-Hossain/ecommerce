@@ -68,7 +68,6 @@ const registration = async (req, res) => {
     );
   } catch (error) {
     responseHandler(res, 500, "Something went wrong. Please try again later");
-    console.log(error);
   }
 };
 const verification = async (req, res) => {
