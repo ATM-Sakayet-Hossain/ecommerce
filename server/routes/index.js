@@ -9,8 +9,8 @@ route.get("/", (req, res) => {
 });
 
 route.use("/auth", authRoute);
-route.use("/product", productRoute);
 route.use("/category", CategoryRoute);
+route.use("/product", productRoute);
 
 
 module.exports = route;
