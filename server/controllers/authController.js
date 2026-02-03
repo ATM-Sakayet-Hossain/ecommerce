@@ -10,12 +10,18 @@ const {
   VerifiedToken,
 } = require("../services/helper");
 const { isValidEmail, isStrongPassword } = require("../services/validation");
-const { responseHandler } = require("../Utils/responseHandler");
+const {
+  responseHandler,
+  responseHandlerSuccess,
+} = require("../Utils/responseHandler");
 const {
   emailVerifyTem,
   resetPassEmailTemp,
 } = require("../services/emailVerifyTem");
-const { deleteFromCloudinary, uploadToCloudinary } = require("../services/cloudinaryService");
+const {
+  deleteFromCloudinary,
+  uploadToCloudinary,
+} = require("../services/cloudinaryService");
 
 const registration = async (req, res) => {
   try {
@@ -23,25 +29,25 @@ const registration = async (req, res) => {
       req.body;
     if (!email) return res.status(400).send({ message: "Email is required" });
     if (!isValidEmail(email))
-      return responseHandler(res, 400, "Invalid email format");
-    if (!password) return responseHandler(res, 400, "Password is required");
+      return responseHandler(res, "Invalid email format");
+    if (!password) return responseHandler(res, "Password is required");
     if (!confirmPassword)
-      return responseHandler(res, 200, "Confirm Password is required.");
+      return responseHandler(res, "Confirm Password is required.");
     if (password != confirmPassword)
       return responseHandler(
         res,
-        200,
+
         "Please provide and confirm your new password.",
       );
     if (!isStrongPassword(password))
       return responseHandler(
         res,
-        400,
+
         "Password must be at least 6 characters long",
       );
     const existingUser = await userSchema.findOne({ email });
     if (existingUser)
-      return responseHandler(res, 400, "Email is already registered");
+      return responseHandler(res, "Email is already registered");
     const generatedOtp = generateOTP();
     const user = new userSchema({
       fullName,
@@ -60,47 +66,44 @@ const registration = async (req, res) => {
       fullName,
     });
     user.save();
-    responseHandler(
+    responseHandlerSuccess(
       res,
-      201,
       "User signed up successfully, Please verify your email before logging in.",
-      true,
     );
   } catch (error) {
-    responseHandler(res, 500, "Something went wrong. Please try again later");
+    responseHandler(res, "Something went wrong. Please try again later");
   }
 };
 const verification = async (req, res) => {
   try {
     const { otp, email } = req.body;
-    if (!otp) return responseHandler(res, 400, " OTP is Required");
-    if (!email) return responseHandler(res, 400, "Unauthorized User");
+    if (!otp) return responseHandler(res, " OTP is Required");
+    if (!email) return responseHandler(res, "Unauthorized User");
     const user = await userSchema.findOne({
       email,
       otp: Number(otp),
       otpExpires: { $gt: new Date() },
       isVerified: false,
     });
-    if (!user) return responseHandler(res, 400, "Invalid or expired OTP.");
+    if (!user) return responseHandler(res, "Invalid or expired OTP.");
     user.isVerified = true;
     user.otp = null;
     user.save();
-    responseHandler(res, 201, "Varificaation successfully", true);
+    responseHandlerSuccess(res, "Varificaation successfully");
   } catch (error) {
-    responseHandler(res, 500, "Something went wrong. Please try again later");
+    responseHandler(res, "Something went wrong. Please try again later");
   }
 };
 const resendOTP = async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email) return responseHandler(res, 400, "Email is required");
+    if (!email) return responseHandler(res, "Email is required");
     const user = await userSchema.findOne({ email, isVerified: false });
-    if (!user) return responseHandler(res, 400, "Invalid Request");
+    if (!user) return responseHandler(res, "Invalid Request");
     if (user.otpExpires && user.otpExpires > Date.now() - 60000) {
       return responseHandler(
         res,
-        429,
-        "Please wait before requesting a new OTP",
+        "Please wait before requesting a new OTP", 429
       );
     }
     const generatedOtp = generateOTP();
@@ -114,10 +117,9 @@ const resendOTP = async (req, res) => {
       templete: emailVerifyTem,
       fullName: user.fullName,
     });
-    responseHandler(res, 200, "OTP send you mail successfully", true);
+    responseHandlerSuccess(res, "OTP send you mail successfully");
   } catch (error) {
-    responseHandler(res, 500, "Something went wrong. Please try again later");
-    console.log(error);
+    responseHandler(res, "Something went wrong. Please try again later");
   }
 };
 const login = async (req, res) => {
@@ -125,19 +127,17 @@ const login = async (req, res) => {
     const { email, password } = req.body;
     if (!email) return res.status(400).send({ message: "Email is required" });
     if (!isValidEmail(email))
-      return responseHandler(res, 400, "Enter a valid email address");
-    if (!password) return responseHandler(res, 400, "Password is required");
+      return responseHandler(res, "Enter a valid email address");
+    if (!password) return responseHandler(res, "Password is required");
     const existingUser = await userSchema.findOne({ email });
-    if (!existingUser)
-      return responseHandler(res, 400, "Invalid email or password");
+    if (!existingUser) return responseHandler(res, "Invalid email or password");
     if (!existingUser.isVerified)
       return responseHandler(
         res,
-        400,
-        "Please verify your email before logging in",
+        "Please verify your email before logging in"
       );
     const isMatch = await existingUser.comparePassword(password);
-    if (!isMatch) return responseHandler(res, 400, "Invalid email or password");
+    if (!isMatch) return responseHandler(res, "Invalid email or password");
     const accToken = generateAccessToken(existingUser);
     const refToken = generateRefreshToken(existingUser);
     res.cookie("X-AS-Token", accToken, {
@@ -152,9 +152,13 @@ const login = async (req, res) => {
       maxAge: 1296000000, // Expires in 1 hour (in milliseconds)
       // sameSite: 'Strict' // Only send for same-site requests
     });
-    responseHandler(res, 201, "Welcome, your login was successful.", true);
+    responseHandlerSuccess(res, "Welcome, your login was successful.");
   } catch (error) {
-    responseHandler(res, 500, "Something went wrong. Please try again later");
+    responseHandler(
+      res,
+      "Something went wrong. Please try again later true",
+      500,
+    );
   }
 };
 const forgetPass = async (req, res) => {
@@ -162,10 +166,9 @@ const forgetPass = async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).send({ message: "Email is required" });
     if (!isValidEmail(email))
-      return responseHandler(res, 400, "Please enter a valid email address");
+      return responseHandler(res, "Please enter a valid email address");
     const existingUser = await userSchema.findOne({ email });
-    if (!existingUser)
-      return responseHandler(res, 400, "Email is not registered");
+    if (!existingUser) return responseHandler(res, "Email is not registered");
     const { resetToken, hashedToken } = generateResetPassToken();
     existingUser.resetPassToken = hashedToken;
     existingUser.resetExpires = Date.now() + 5 * 60 * 1000;
@@ -180,30 +183,24 @@ const forgetPass = async (req, res) => {
       templete: resetPassEmailTemp,
       fullName: existingUser.fullName,
     });
-    responseHandler(
+    responseHandlerSuccess(
       res,
-      200,
-      "A reset password link has been sent to your email",
-      true,
+      "A reset password link has been sent to your email"
     );
   } catch (error) {
-    responseHandler(res, 500, "Something went wrong. Please try again later");
+    responseHandler(res, "Something went wrong. Please try again later", 500);
   }
 };
 const resetPassword = async (req, res) => {
   try {
     const { newPassword, confirmPassword } = req.body;
-    // const {token} = req.params.token;
     const token = req.query.sec;
-    console.log(token);
-    if (!newPassword)
-      return responseHandler(res, 400, "New password is required.");
+    if (!newPassword) return responseHandler(res, "New password is required.");
     if (!confirmPassword)
-      return responseHandler(res, 400, "Confirm Password is required.");
+      return responseHandler(res, "Confirm Password is required.");
     if (newPassword != confirmPassword)
       return responseHandler(
         res,
-        400,
         "Please provide and confirm your new password.",
       );
     const hashedToken = hashResetToken(token);
@@ -211,19 +208,17 @@ const resetPassword = async (req, res) => {
       resetPassToken: hashedToken,
       resetExpires: { $gt: Date.now() },
     });
-    if (!existingUser) return responseHandler(res, 400, "Invalid Request");
+    if (!existingUser) return responseHandler(res, "Invalid Request");
     existingUser.password = newPassword;
     existingUser.resetPassToken = undefined;
     existingUser.resetExpires = undefined;
     existingUser.save();
-    responseHandler(
+    responseHandlerSuccess(
       res,
-      200,
-      "Your password has been reset successfully. You can now log in.",
-      true,
+      "Your password has been reset successfully. You can now log in."
     );
   } catch (error) {
-    responseHandler(res, 500, "Something went wrong. Please try again later");
+    responseHandler(res, "Something went wrong. Please try again later");
   }
 };
 const getprofile = async (req, res) => {
@@ -233,10 +228,10 @@ const getprofile = async (req, res) => {
       .select(
         "-password -otp -otpExpires -resetPassToken -resetExpires -updatedAt",
       );
-    if (!userProfile) return responseHandler(res, 400, "Invalid Request");
-    responseHandler(res, 200, "", true, userProfile);
+    if (!userProfile) return responseHandler(res, "Invalid Request");
+    responseHandlerSuccess(res, "", userProfile);
   } catch (error) {
-    responseHandler(res, 500, "Something went wrong. Please try again later");
+    responseHandler(res, "Something went wrong. Please try again later");
   }
 };
 const updateUserProfile = async (req, res) => {
@@ -249,39 +244,40 @@ const updateUserProfile = async (req, res) => {
       .select(
         "-password -otp -otpExpires -resetPassToken -resetExpires -updatedAt",
       );
-    if (avatar){
+    if (avatar) {
       const imgPublicId = user.avatar.split("/").pop().split(".")[0];
-      deleteFromCloudinary(`avatar/${imgPublicId}`)
-      const imgRes = await uploadToCloudinary(avatar, "avatar")
+      deleteFromCloudinary(`avatar/${imgPublicId}`);
+      const imgRes = await uploadToCloudinary(avatar, "avatar");
       user.avatar = imgRes.secure_url;
     }
     if (fullName) user.fullName = fullName;
     if (phone) user.phone = phone;
     if (address) user.address = address;
     user.save();
-    responseHandler(res, 200, "", true, user);
+    responseHandlerSuccess(res, "", user);
   } catch (error) {
-    console.log(error);
-    responseHandler(res, 500, "Something went wrong. Please try again later");
+    responseHandler(res, "Something went wrong. Please try again later", 500);
   }
 };
 const refreshAccessToken = async (req, res) => {
   try {
     const refToken = req.cookies?.["X-RF-Token"] || req.header.authorization;
-    if(!refToken) return responseHandler(res, 400, "time is Expair");
-    const decoded = VerifiedToken(refToken)
-    if(!decoded) return;
+    if (!refToken) return responseHandler(res, "time is Expair");
+    const decoded = VerifiedToken(refToken);
+    if (!decoded) return;
     const accToken = generateAccessToken(decoded);
-    res.cookie("X-AS-Token", accToken, {
-      httpOnly: false, // Not accessible by client-side JS
-      secure: false, // Only sent over HTTPS
-      maxAge: 3600000, // Expires in 1 hour (in milliseconds)
-      // sameSite: 'Strict' // Only send for same-site requests
-    }).send({success: true});
+    res
+      .cookie("X-AS-Token", accToken, {
+        httpOnly: false, // Not accessible by client-side JS
+        secure: false, // Only sent over HTTPS
+        maxAge: 3600000, // Expires in 1 hour (in milliseconds)
+        // sameSite: 'Strict' // Only send for same-site requests
+      })
+      .send({ success: true });
   } catch (error) {
-    responseHandler(res, 500, "Something went wrong. Please try again later");
+    responseHandler(res, "Something went wrong. Please try again later", 500);
   }
-}
+};
 
 module.exports = {
   registration,

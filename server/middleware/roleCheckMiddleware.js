@@ -6,9 +6,9 @@ const roleCheckMiddleware = (...roles) => {
             if (roles.includes(req.user.role)) {
                 return next()
             }
-            return responseHandler(res, 400, "Invalid Request")
+            return responseHandler(res, "Contract Your Admin", 400)
         } catch (error) {
-            return responseHandler(res, 400, "Invalid Request")
+            return responseHandler(res, "Invalid Request", 500)
         }
     }
 }

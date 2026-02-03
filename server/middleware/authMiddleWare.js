@@ -5,16 +5,17 @@ const authMiddleWare = async (req, res, next) => {
     try {
         const token = req.cookies;
         if (!token["X-AS-Token"]) {
-            return responseHandler(res, 400, "Invalid Request")
+            return responseHandler(res, "Invalid Request", 400)
         }
         const decoded = VerifiedToken(token["X-AS-Token"])
         if (!decoded) {
-            return responseHandler(res, 400, "Invalid Request")
+            return responseHandler(res, "Invalid Request", 400)
         }
         req.user = decoded;
         next()
     } catch (error) {
-        return responseHandler(res, 400, "Invalid Request")
+        console.log(error);
+        return responseHandler(res,"Invalid Request", 500)
     }
 }
 
