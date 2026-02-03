@@ -6,6 +6,8 @@ const multer = require("multer");
 const route = express.Router();
 const upload = multer();
 
+
+
 route.post(
   "/createProduct",
   authMiddleWare,
@@ -16,5 +18,15 @@ route.post(
   ]),
   createProduct,
 );
+
+route.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({
+      message: "Maximum 4 images allowed",
+    });
+  }
+  next();
+});
+
 
 module.exports = route;
