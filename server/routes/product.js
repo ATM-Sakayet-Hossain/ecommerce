@@ -2,7 +2,7 @@ const express = require("express");
 const authMiddleWare = require("../middleware/authMiddleWare");
 const roleCheckMiddleware = require("../middleware/roleCheckMiddleware");
 const multer = require("multer");
-const { createProduct } = require("../controllers/ProductController");
+const { createProduct, getAllProduct } = require("../controllers/ProductController");
 const route = express.Router();
 const upload = multer();
 
@@ -18,6 +18,7 @@ route.post(
   ]),
   createProduct,
 );
+route.get("/allProduct", getAllProduct)
 
 route.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {

@@ -44,35 +44,43 @@ const createProduct = async (req, res) => {
       if (!SIZE_ENUM.includes(variant.size))
         return responseHandler(res, "Invalid size");
       if (!variant.stock || variant.stock < 0)
-        return responseHandler(res, "Product stock is required and must be more than 0");
+        return responseHandler(
+          res,
+          "Product stock is required and must be more than 0",
+        );
     }
-    const sku = variatData.map(v => v.sku)
-    if(new set(sku).size !== skus.length) return responseHandler(res, "SKU must be unique")
-    if(!thumbnail) return responseHandler(res, "Product Thumbnail is required")
-    if(images && images.length > 4) return responseHandler(res, "You can upload images max 4")
-    let imagesUrl= [];
-    if(images){
-        const resPromise = images.map(async(i)=> uploadToCloudinary(i, "Product"))
-        const result = await Promise.all(resPromise)
-        imagesUrl = result.map(r => r.secure_url)
+    const sku = variatData.map((v) => v.sku);
+    if (new set(sku).size !== skus.length)
+      return responseHandler(res, "SKU must be unique");
+    if (!thumbnail)
+      return responseHandler(res, "Product Thumbnail is required");
+    if (images && images.length > 4)
+      return responseHandler(res, "You can upload images max 4");
+    let imagesUrl = [];
+    if (images) {
+      const resPromise = images.map(async (i) =>
+        uploadToCloudinary(i, "Product"),
+      );
+      const result = await Promise.all(resPromise);
+      imagesUrl = result.map((r) => r.secure_url);
     }
     // for (const img of images) {
     //     const result = await uploadToCloudinary(img, "Product");
     //     imagesUrl.push(result.secure_url);
     // }
     const newProduct = productSchema({
-        title,
-        slug: slug.toLowerCase(),
-        description,
-        category,
-        price,
-        discountPercentage,
-        variants: variatData,
-        thumbnail: thumbnailUrl.secure_url,
-        images: imagesUrl,
-        tags,
-        isActive
-    })
+      title,
+      slug: slug.toLowerCase(),
+      description,
+      category,
+      price,
+      discountPercentage,
+      variants: variatData,
+      thumbnail: thumbnailUrl.secure_url,
+      images: imagesUrl,
+      tags,
+      isActive,
+    });
     newProduct.save();
     responseHandlerSuccess(res, "Product created sucessfully", 201);
   } catch (error) {
@@ -80,4 +88,47 @@ const createProduct = async (req, res) => {
   }
 };
 
-module.exports = { createProduct };
+const getAllProduct = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.page) || 10;
+    const category = req.query.category;
+    const skip = (page - 1) * limit;
+    const totalProducts = await productSchema.countDocuments();
+    const pipeline = [
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "category",
+        },
+      },
+      { $unwind: "$category" },
+      { $sort: { createdAt: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+    ]
+    if(category){
+      pipeline.push({
+        $match: {
+          "category.name": category
+        }
+      })
+    }
+    const productList = await productSchema.aggregate(pipeline)
+    const totalPages = Math.ceil(totalProducts / limit)
+    responseHandlerSuccess(res, "", {
+      product: productList,
+      page,
+      limit,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+    })
+  } catch (error) {
+    responseHandler(res, 500, "Something went wrong. Please try again later");
+  }
+};
+
+module.exports = { createProduct, getAllProduct };
