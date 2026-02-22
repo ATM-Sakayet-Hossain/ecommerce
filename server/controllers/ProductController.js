@@ -97,6 +97,11 @@ const getAllProduct = async (req, res) => {
     const totalProducts = await productSchema.countDocuments();
     const pipeline = [
       {
+        $match: {
+          isActive: true,
+        },
+      },
+      {
         $lookup: {
           from: "categories",
           localField: "category",
@@ -108,16 +113,16 @@ const getAllProduct = async (req, res) => {
       { $sort: { createdAt: -1 } },
       { $skip: skip },
       { $limit: limit },
-    ]
-    if(category){
+    ];
+    if (category) {
       pipeline.push({
         $match: {
-          "category.name": category
-        }
-      })
+          "category.slug": category,
+        },
+      });
     }
-    const productList = await productSchema.aggregate(pipeline)
-    const totalPages = Math.ceil(totalProducts / limit)
+    const productList = await productSchema.aggregate(pipeline);
+    const totalPages = Math.ceil(totalProducts / limit);
     responseHandlerSuccess(res, "", {
       product: productList,
       page,
@@ -125,10 +130,38 @@ const getAllProduct = async (req, res) => {
       totalPages,
       hasNextPage: page < totalPages,
       hasPrevPage: page > 1,
-    })
+    });
+  } catch (error) {
+    responseHandler(res, 500, "Something went wrong. Please try again later");
+  }
+};
+const getProductDetails = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const productDetails = await productSchema
+      .findOne({ slug, isActive: true })
+      .populate("category", "name")
+      .select("-isActive -updatedAt -__v");
+    if (!productDetails)
+      return responseHandler(res, "Product is not Found", 404);
+    return responseHandlerSuccess(
+      res,
+      "Product Details Fetched Successfully",
+      productDetails,
+    );
+  } catch (error) {
+    responseHandler(res, 500, "Something went wrong. Please try again later");
+  }
+};
+const updateProduct = async (req, res) => {
+  try {
+    const { title, description, category, price, discountPercentage, variants, tags, isActive } = req.body;
+    const { slug } = req.params;
+    const productData = await productSchema.findOne({ slug })
+    console.log(productData);
   } catch (error) {
     responseHandler(res, 500, "Something went wrong. Please try again later");
   }
 };
 
-module.exports = { createProduct, getAllProduct };
+module.exports = { createProduct, getAllProduct, getProductDetails, updateProduct };
