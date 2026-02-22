@@ -155,13 +155,27 @@ const getProductDetails = async (req, res) => {
 };
 const updateProduct = async (req, res) => {
   try {
-    const { title, description, category, price, discountPercentage, variants, tags, isActive } = req.body;
+    const {
+      title,
+      description,
+      category,
+      price,
+      discountPercentage,
+      variants,
+      tags,
+      isActive,
+    } = req.body;
     const { slug } = req.params;
-    const productData = await productSchema.findOne({ slug })
+    const productData = await productSchema.findOne({ slug });
     console.log(productData);
   } catch (error) {
     responseHandler(res, 500, "Something went wrong. Please try again later");
   }
 };
 
-module.exports = { createProduct, getAllProduct, getProductDetails, updateProduct };
+module.exports = {
+  createProduct,
+  getAllProduct,
+  getProductDetails,
+  updateProduct,
+};
