@@ -7,9 +7,10 @@ const {uploadToCloudinary} = require("../services/cloudinaryService")
 
 const createCategory = async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, slug, description } = req.body;
     const thumbnail = req.file;
     if (!name) return responseHandler(res, "Category Name is Required");
+    if (!slug) return responseHandler(res, "Category Slug is Required");
     if (!thumbnail) return responseHandler(res, "Picture is Required");
     const existingName = await categorySchema.findOne({name});
     if(existingName) return responseHandler(res, "Category name must be unique");
@@ -17,6 +18,7 @@ const createCategory = async (req, res) => {
 
     const category = categorySchema({
         name,
+        slug,
         description,
         thumbnail: imgRes.secure_url,
     })

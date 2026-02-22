@@ -24,12 +24,16 @@ const createProduct = async (req, res) => {
     const images = req.files?.images || [];
     if (!title) return responseHandler(res, "Product title is required");
     if (!slug) return responseHandler(res, "Product slug is required");
-    const existslug = await productSchema.findOne({ slud: slug.toLowerCase() });
-    if (!existslug) return responseHandler(res, "slug already Exist");
+    const existslug = await productSchema.findOne({ slug: slug.toLowerCase() });
+    if (existslug) return responseHandler(res, "slug already Exist");
     if (!description)
       return responseHandler(res, "Product description is required");
     if (!category) return responseHandler(res, "Product category is required");
-    const isCategoryExist = await categorySchema.findById(category);
+    const categoryName =
+      typeof category === "string" ? category : category.name;
+    const isCategoryExist = await categorySchema.findOne({
+      name: categoryName,
+    });
     if (!isCategoryExist) return responseHandler(res, "Invalid category");
     if (!price) return responseHandler(res, "Product price is required");
     const variatData = JSON.parse(variants);
@@ -50,16 +54,17 @@ const createProduct = async (req, res) => {
         );
     }
     const sku = variatData.map((v) => v.sku);
-    if (new set(sku).size !== skus.length)
+    if (new Set(sku).size !== sku.length)
       return responseHandler(res, "SKU must be unique");
     if (!thumbnail)
       return responseHandler(res, "Product Thumbnail is required");
     if (images && images.length > 4)
       return responseHandler(res, "You can upload images max 4");
+    const thumbnailUrl = await uploadToCloudinary(thumbnail, "products");
     let imagesUrl = [];
     if (images) {
       const resPromise = images.map(async (i) =>
-        uploadToCloudinary(i, "Product"),
+        uploadToCloudinary(i, "products"),
       );
       const result = await Promise.all(resPromise);
       imagesUrl = result.map((r) => r.secure_url);
@@ -72,7 +77,7 @@ const createProduct = async (req, res) => {
       title,
       slug: slug.toLowerCase(),
       description,
-      category,
+      category: isCategoryExist._id,
       price,
       discountPercentage,
       variants: variatData,
@@ -81,9 +86,10 @@ const createProduct = async (req, res) => {
       tags,
       isActive,
     });
-    newProduct.save();
+    await newProduct.save();
     responseHandlerSuccess(res, "Product created sucessfully", 201);
   } catch (error) {
+    console.log(error);
     responseHandler(res, 500, "Something went wrong. Please try again later");
   }
 };
