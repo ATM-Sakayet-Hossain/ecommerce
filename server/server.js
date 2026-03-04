@@ -1,15 +1,19 @@
 const express = require("express");
 const app = express();
-const cookieParser = require("cookie-parser")
+var cookieParser = require("cookie-parser")
 const port = process.env.port || 1993
 const cors = require("cors");
 const dbConfig = require("./dbConfig");
 const route = require("./routes");
+const cloudinaryConfig = require("./services/cloudinaryConfig")
+
+app.use(express.urlencoded({ extended: true }))
 app.use(express.json());
 app.use(cookieParser())
 require("dotenv").config();
 app.use(cors());
 dbConfig();
+cloudinaryConfig()
 app.use(route);
 
 app.listen(port, () => {

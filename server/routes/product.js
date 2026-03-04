@@ -23,10 +23,14 @@ route.post(
 );
 route.get("/allProduct", getAllProduct);
 route.get("/:slug", getProductDetails);
-route.get(
+route.put(
   "/update/:slug",
   authMiddleWare,
   roleCheckMiddleware("admin", "editor"),
+  upload.fields([
+    { name: "thumbnail", maxCount: 1 },
+    { name: "images", maxCount: 4 },
+  ]),
   updateProduct,
 );
 
