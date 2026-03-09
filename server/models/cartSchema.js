@@ -9,7 +9,7 @@ const cartItemSchema = new mongoose.Schema(
         },
         sku: {
             type: String,
-            required: true
+            required: true,
         },
         quantity: {
             type: Number,
@@ -37,10 +37,6 @@ const cartSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
-        totalPrice: {
-            type: Number,
-            default: 0,
-        },
     },
     { timestamps: true }
 );
@@ -48,7 +44,6 @@ const cartSchema = new mongoose.Schema(
 // Auto-calculate totals before saving
 cartSchema.pre("save", function () {
     this.totalItems = this.items.reduce((acc, item) => acc + item.quantity, 0);
-    this.totalPrice = this.items.reduce((acc, item) => acc + item.subtotal, 0);
 });
 
 module.exports = mongoose.model("Cart", cartSchema);
