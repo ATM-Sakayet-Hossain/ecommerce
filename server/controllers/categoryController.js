@@ -1,19 +1,16 @@
 const categorySchema = require("../models/categorySchema");
-const {
-  responseHandler,
-  responseHandlerSuccess,
-} = require("../Utils/responseHandler");
-const {uploadToCloudinary} = require("../services/cloudinaryService")
+const {uploadToCloudinary} = require("../services/cloudinaryService");
+const { responseHandler } = require("../Utils/responseHandler");
 
 const createCategory = async (req, res) => {
   try {
     const { name, slug, description } = req.body;
     const thumbnail = req.file;
-    if (!name) return responseHandler(res, "Category Name is Required");
-    if (!slug) return responseHandler(res, "Category Slug is Required");
-    if (!thumbnail) return responseHandler(res, "Picture is Required");
+    if (!name) return responseHandler.error(res, 400, "Category Name is Required");
+    if (!slug) return responseHandler.error(res, 400, "Category Slug is Required");
+    if (!thumbnail) return responseHandler.error(res, 400, "Picture is Required");
     const existingName = await categorySchema.findOne({name});
-    if(existingName) return responseHandler(res, "Category name must be unique");
+    if(existingName) return responseHandler.error(res, 400, "Category name must be unique");
     const imgRes = await uploadToCloudinary(thumbnail, "category")
 
     const category = categorySchema({
@@ -23,18 +20,17 @@ const createCategory = async (req, res) => {
         thumbnail: imgRes.secure_url,
     })
     category.save()
-    responseHandlerSuccess(res, "Category created successfully", 201);
+    responseHandler.success(res, 201, category, "Category created successfully");
   } catch (error) {
-    responseHandler(res, 500, "Something went wrong. Please try again later");
+    responseHandler.error(res, 500, "Something went wrong. Please try again later");
   }
 };
 const getAllCategory =async (req, res) => {
     try {
         const categoris = await categorySchema.find({});
-        responseHandlerSuccess(res, categoris);
+        responseHandler.success(res, 200, categoris);
     } catch (error) {
-        console.log(error);
-        responseHandler(res, 500, "Something went wrong. Please try again later");
+        responseHandler.error(res, 500, "Something went wrong. Please try again later");
     }
 }
 

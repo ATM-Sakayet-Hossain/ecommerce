@@ -1,28 +1,17 @@
-const responseHandler = (
-  res,
-  message = "",
-  statusCode = 400,
-  success = false,
-  data = null
-) => {
-  return res.status(statusCode).json({
-    success,
-    message,
-    ...(data && { data }),
-  });
-};
-const responseHandlerSuccess = (
-  res,
-  message = "",
-  statusCode = 200,
-  success = true,
-  data = null
-) => {
-  return res.status(statusCode).json({
-    success,
-    message,
-    ...(data && { data }),
-  });
+const responseHandler = {
+  success: (res, statusCode = 200, data, message) => {
+    return res.status(statusCode).json({
+      success: true,
+      message,
+      data,
+    });
+  },
+  error: (res, statusCode = 500, message) => {
+    return res.status(statusCode).json({
+      success: false,
+      message: message || "Internal Server Error",
+    });
+  },
 };
 
-module.exports = { responseHandler, responseHandlerSuccess }
+module.exports = { responseHandler };

@@ -4,10 +4,7 @@ const {
   uploadToCloudinary,
   deleteFromCloudinary,
 } = require("../services/cloudinaryService");
-const {
-  responseHandler,
-  responseHandlerSuccess,
-} = require("../Utils/responseHandler");
+const { responseHandler } = require("../Utils/responseHandler");
 const SIZE_ENUM = ["s", "m", "l", "xl", "2xl", "3xl"];
 
 const createProduct = async (req, res) => {
@@ -25,31 +22,31 @@ const createProduct = async (req, res) => {
     } = req.body;
     const thumbnail = req.files?.thumbnail?.[0];
     const images = req.files?.images || [];
-    if (!title) return responseHandler(res, "Product title is required");
-    if (!slug) return responseHandler(res, "Product slug is required");
+    if (!title) return responseHandler.error(res, 400, "Product title is required");
+    if (!slug) return responseHandler.error(res, 400, "Product slug is required");
     const existslug = await productSchema.findOne({ slug: slug.toLowerCase() });
-    if (existslug) return responseHandler(res, "slug already Exist");
+    if (existslug) return responseHandler.error(res, 400, "slug already Exist");
     if (!description)
-      return responseHandler(res, "Product description is required");
-    if (!category) return responseHandler(res, "Product category is required");
+      return responseHandler.error(res, 400, "Product description is required");
+    if (!category) return responseHandler.error(res, 400, "Product category is required");
     const categoryName =
       typeof category === "string" ? category : category.name;
     const isCategoryExist = await categorySchema.findOne({
       name: categoryName,
     });
-    if (!isCategoryExist) return responseHandler(res, "Invalid category");
-    if (!price) return responseHandler(res, "Product price is required");
+    if (!isCategoryExist) return responseHandler.error(res, 400, "Invalid category");
+    if (!price) return responseHandler.error(res, 400, "Product price is required");
     const variatData = JSON.parse(variants);
     if (!Array.isArray(variatData) || variatData.length === 0)
-      return responseHandler(res, "Minimum 1 variant is required.");
+      return responseHandler.error(res, 400, "Minimum 1 variant is required.");
     for (const variant of variatData) {
-      if (!variant.sku) return responseHandler(res, "Product sku is required");
+      if (!variant.sku) return responseHandler.error(res, 400, "Product sku is required");
       if (!variant.color)
-        return responseHandler(res, "Product color is required");
+        return responseHandler.error(res, 400, "Product color is required");
       if (!variant.size)
-        return responseHandler(res, "Product size is required");
+        return responseHandler.error(res, 400, "Product size is required");
       if (!SIZE_ENUM.includes(variant.size))
-        return responseHandler(res, "Invalid size");
+        return responseHandler.error(res, 400, "Invalid size");
       if (!variant.stock || variant.stock < 0)
         return responseHandler(
           res,
@@ -58,11 +55,11 @@ const createProduct = async (req, res) => {
     }
     const sku = variatData.map((v) => v.sku);
     if (new Set(sku).size !== sku.length)
-      return responseHandler(res, "SKU must be unique");
+      return responseHandler.error(res, 400, "SKU must be unique");
     if (!thumbnail)
-      return responseHandler(res, "Product Thumbnail is required");
+      return responseHandler.error(res, 400, "Product Thumbnail is required");
     if (images && images.length > 4)
-      return responseHandler(res, "You can upload images max 4");
+      return responseHandler.error(res, 400, "You can upload images max 4");
     const thumbnailUrl = await uploadToCloudinary(thumbnail, "products");
     let imagesUrl = [];
     if (images) {
@@ -90,10 +87,9 @@ const createProduct = async (req, res) => {
       isActive,
     });
     await newProduct.save();
-    responseHandlerSuccess(res, "Product created sucessfully", 201);
+    responseHandler.success(res, 201, newProduct, "Product created sucessfully");
   } catch (error) {
-    console.log(error);
-    responseHandler(res, 500, "Something went wrong. Please try again later");
+    responseHandler.error(res, 500, "Something went wrong. Please try again later");
   }
 };
 
@@ -132,7 +128,7 @@ const getAllProduct = async (req, res) => {
     }
     const productList = await productSchema.aggregate(pipeline);
     const totalPages = Math.ceil(totalProducts / limit);
-    responseHandlerSuccess(res, "", {
+    responseHandler.success(res, 200, {
       product: productList,
       page,
       limit,
@@ -141,7 +137,7 @@ const getAllProduct = async (req, res) => {
       hasPrevPage: page > 1,
     });
   } catch (error) {
-    responseHandler(res, 500, "Something went wrong. Please try again later");
+    responseHandler.error(res, 500, "Something went wrong. Please try again later");
   }
 };
 const getProductDetails = async (req, res) => {
@@ -152,14 +148,14 @@ const getProductDetails = async (req, res) => {
       .populate("category", "name")
       .select("-isActive -updatedAt -__v");
     if (!productDetails)
-      return responseHandler(res, "Product is not Found", 404);
-    return responseHandlerSuccess(
-      res,
-      "Product Details Fetched Successfully",
+      return responseHandler.error(res, 400, "Product is not Found", 404);
+    return responseHandler.success(
+      res, 200,
       productDetails,
+      "Product Details Fetched Successfully",
     );
   } catch (error) {
-    responseHandler(res, 500, "Something went wrong. Please try again later");
+    responseHandler.error(res, 500, "Something went wrong. Please try again later");
   }
 };
 const updateProduct = async (req, res) => {
@@ -191,11 +187,11 @@ const updateProduct = async (req, res) => {
     const variantData = variants && JSON.parse(variants);
     if (Array.isArray(variantData) && variantData.length > 0) {
       for (const variant of variantData) {
-        if (!variant.sku) return responseHandler(res, "Sku is required");
-        if (!variant.color) return responseHandler(res, "Color is required");
-        if (!variant.size) return responseHandler(res, "Size is required");
+        if (!variant.sku) return responseHandler.error(res, 400, "Sku is required");
+        if (!variant.color) return responseHandler.error(res, 400, "Color is required");
+        if (!variant.size) return responseHandler.error(res, 400, "Size is required");
         if (!SIZE_ENUM.includes(variant.size))
-          return responseHandler(res, "Incalid Size");
+          return responseHandler.error(res, 400, "Incalid Size");
         if (!variant.stock || variant.stock < 1)
           return responseHandler(
             res,
@@ -204,7 +200,7 @@ const updateProduct = async (req, res) => {
       }
       const sku = variantData.map((v) => v.sku);
       if (new Set(sku).size !== sku.length)
-        return responseHandler(res, "SUK must unique");
+        return responseHandler.error(res, 400, "SUK must unique");
       productData.variants = variantData;
     }
     if (thumbnail) {
@@ -218,9 +214,9 @@ const updateProduct = async (req, res) => {
     if (destroyImages.length > 0) totalImges -= destroyImages.length;
     if (Array.isArray(images) && images.length > 0) totalImges += images.length;
     if (totalImges > 4)
-      return responseHandler(res, "You can upload maximum 4 images");
+      return responseHandler.error(res, 400, "You can upload maximum 4 images");
     if (totalImges < 1)
-      return responseHandler(res, "Minimum 1 images should be stay");
+      return responseHandler.error(res, 400, "Minimum 1 images should be stay");
     if (images) {
       const resPromise = images.map(async (i) =>
         uploadToCloudinary(i, "products"),
@@ -243,10 +239,9 @@ const updateProduct = async (req, res) => {
     imagesUrl = imagesUrl.concat(filterImage);
     if (imagesUrl.length > 0) productData.images = imagesUrl;
     productData.save()
-    responseHandlerSuccess(res, "Product Updated Successfully", productData);
+    responseHandler.success(res, 200, productData, "Product Updated Successfully");
   } catch (error) {
-    console.log(error);
-    responseHandler(res, 500, "Something went wrong. Please try again later");
+    responseHandler.error(res, 500, "Something went wrong. Please try again later");
   }
 };
 
