@@ -23,7 +23,19 @@ const categorySchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
-    }
-})
+    },
+    sortOrder: {
+      type: Number,
+      default: 0, // for UI ordering
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+}, {timestamps: true})
 
 module.exports = mongoose.model("category", categorySchema);
