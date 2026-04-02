@@ -1,4 +1,4 @@
-const emailVerifyTem = ({ generatedOtp, fullName }) => {
+const emailVerifyTem = ({ otp, fullName }) => {
   return `
     <body style="margin:0; padding:0; background-color:#f4f6f8; font-family:Arial, Helvetica, sans-serif;">
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8; padding:20px;">
@@ -37,7 +37,7 @@ const emailVerifyTem = ({ generatedOtp, fullName }) => {
                     font-weight:bold;
                     border-radius:6px;
                   ">
-                    ${generatedOtp}
+                    ${otp}
                   </span>
                 </div>
 
@@ -67,7 +67,7 @@ const emailVerifyTem = ({ generatedOtp, fullName }) => {
   </body>`;
 };
 
-const resetPassEmailTemp = ({ generatedOtp, fullName }) => {
+const resetPassEmailTemp = ({ otp, fullName }) => {
   return `
   <div style="margin:0; padding:0; background-color:#f4f6f8; font-family:Arial, Helvetica, sans-serif;">
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8; padding:20px;">
@@ -97,7 +97,7 @@ const resetPassEmailTemp = ({ generatedOtp, fullName }) => {
 
                 <!-- Button -->
                 <p style="text-align:center; margin:30px 0;">
-                  <a href="${generatedOtp}"
+                  <a href="${otp}"
                      style="background-color:#2f80ed; color:#ffffff; text-decoration:none; padding:12px 24px; border-radius:4px; display:inline-block; font-weight:bold;">
                     Reset Password
                   </a>
