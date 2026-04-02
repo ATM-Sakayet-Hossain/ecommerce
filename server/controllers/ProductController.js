@@ -11,36 +11,42 @@ const createProduct = async (req, res) => {
   try {
     const {
       title,
-      slug,
       description,
       category,
       price,
-      discountPercentage,
       variants,
+      brand,
       tags,
+      discountPrice,
+      discountPercentage,
       isActive,
     } = req.body;
     const thumbnail = req.files?.thumbnail?.[0];
     const images = req.files?.images || [];
-    if (!title) return responseHandler.error(res, 400, "Product title is required");
-    if (!slug) return responseHandler.error(res, 400, "Product slug is required");
+    if (!title)
+      return responseHandler.error(res, 400, "Product title is required");
+    const slug = slugify(title, { lower: true, strict: true });
     const existslug = await productSchema.findOne({ slug: slug.toLowerCase() });
     if (existslug) return responseHandler.error(res, 400, "slug already Exist");
     if (!description)
       return responseHandler.error(res, 400, "Product description is required");
-    if (!category) return responseHandler.error(res, 400, "Product category is required");
+    if (!category)
+      return responseHandler.error(res, 400, "Product category is required");
     const categoryName =
       typeof category === "string" ? category : category.name;
     const isCategoryExist = await categorySchema.findOne({
       name: categoryName,
     });
-    if (!isCategoryExist) return responseHandler.error(res, 400, "Invalid category");
-    if (!price) return responseHandler.error(res, 400, "Product price is required");
+    if (!isCategoryExist)
+      return responseHandler.error(res, 400, "Invalid category");
+    if (!price)
+      return responseHandler.error(res, 400, "Product price is required");
     const variatData = JSON.parse(variants);
     if (!Array.isArray(variatData) || variatData.length === 0)
       return responseHandler.error(res, 400, "Minimum 1 variant is required.");
     for (const variant of variatData) {
-      if (!variant.sku) return responseHandler.error(res, 400, "Product sku is required");
+      if (!variant.sku)
+        return responseHandler.error(res, 400, "Product sku is required");
       if (!variant.color)
         return responseHandler.error(res, 400, "Product color is required");
       if (!variant.size)
@@ -84,12 +90,25 @@ const createProduct = async (req, res) => {
       thumbnail: thumbnailUrl.secure_url,
       images: imagesUrl,
       tags,
+      brand,
+      discountPrice,
       isActive,
+      createdBy: req.user?._id,
+      updatedBy: req.user?._id,
     });
     await newProduct.save();
-    responseHandler.success(res, 201, newProduct, "Product created sucessfully");
+    responseHandler.success(
+      res,
+      201,
+      newProduct,
+      "Product created sucessfully",
+    );
   } catch (error) {
-    responseHandler.error(res, 500, "Something went wrong. Please try again later");
+    responseHandler.error(
+      res,
+      500,
+      "Something went wrong. Please try again later",
+    );
   }
 };
 
@@ -137,7 +156,11 @@ const getAllProduct = async (req, res) => {
       hasPrevPage: page > 1,
     });
   } catch (error) {
-    responseHandler.error(res, 500, "Something went wrong. Please try again later");
+    responseHandler.error(
+      res,
+      500,
+      "Something went wrong. Please try again later",
+    );
   }
 };
 const getProductDetails = async (req, res) => {
@@ -150,12 +173,17 @@ const getProductDetails = async (req, res) => {
     if (!productDetails)
       return responseHandler.error(res, 400, "Product is not Found", 404);
     return responseHandler.success(
-      res, 200,
+      res,
+      200,
       productDetails,
       "Product Details Fetched Successfully",
     );
   } catch (error) {
-    responseHandler.error(res, 500, "Something went wrong. Please try again later");
+    responseHandler.error(
+      res,
+      500,
+      "Something went wrong. Please try again later",
+    );
   }
 };
 const updateProduct = async (req, res) => {
@@ -187,9 +215,12 @@ const updateProduct = async (req, res) => {
     const variantData = variants && JSON.parse(variants);
     if (Array.isArray(variantData) && variantData.length > 0) {
       for (const variant of variantData) {
-        if (!variant.sku) return responseHandler.error(res, 400, "Sku is required");
-        if (!variant.color) return responseHandler.error(res, 400, "Color is required");
-        if (!variant.size) return responseHandler.error(res, 400, "Size is required");
+        if (!variant.sku)
+          return responseHandler.error(res, 400, "Sku is required");
+        if (!variant.color)
+          return responseHandler.error(res, 400, "Color is required");
+        if (!variant.size)
+          return responseHandler.error(res, 400, "Size is required");
         if (!SIZE_ENUM.includes(variant.size))
           return responseHandler.error(res, 400, "Incalid Size");
         if (!variant.stock || variant.stock < 1)
@@ -238,10 +269,19 @@ const updateProduct = async (req, res) => {
     });
     imagesUrl = imagesUrl.concat(filterImage);
     if (imagesUrl.length > 0) productData.images = imagesUrl;
-    productData.save()
-    responseHandler.success(res, 200, productData, "Product Updated Successfully");
+    productData.save();
+    responseHandler.success(
+      res,
+      200,
+      productData,
+      "Product Updated Successfully",
+    );
   } catch (error) {
-    responseHandler.error(res, 500, "Something went wrong. Please try again later");
+    responseHandler.error(
+      res,
+      500,
+      "Something went wrong. Please try again later",
+    );
   }
 };
 
