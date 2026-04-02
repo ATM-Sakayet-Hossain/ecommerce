@@ -13,8 +13,12 @@ const {
   refreshAccessToken,
   logout,
   changePassword,
+  getAuthStatus,
+  deactivateAccount,
+  userStatus,
 } = require("../controllers/authController");
 const authMiddleWare = require("../middleware/authMiddleWare");
+const roleCheckMiddleware = require("../middleware/roleCheckMiddleware");
 const route = express.Router();
 
 route.post("/registration", registration);
