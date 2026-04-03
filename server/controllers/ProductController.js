@@ -111,7 +111,6 @@ const createProduct = async (req, res) => {
     );
   }
 };
-
 const getAllProduct = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -125,6 +124,52 @@ const getAllProduct = async (req, res) => {
           isActive: true,
         },
       },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "category",
+        },
+      },
+      { $unwind: "$category" },
+      { $sort: { createdAt: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+    ];
+    if (category) {
+      pipeline.push({
+        $match: {
+          "category.slug": category,
+        },
+      });
+    }
+    const productList = await productSchema.aggregate(pipeline);
+    const totalPages = Math.ceil(totalProducts / limit);
+    responseHandler.success(res, 200, {
+      product: productList,
+      page,
+      limit,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+    });
+  } catch (error) {
+    responseHandler.error(
+      res,
+      500,
+      "Something went wrong. Please try again later",
+    );
+  }
+};
+const getAdminProduct = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.page) || 10;
+    const category = req.query.category;
+    const skip = (page - 1) * limit;
+    const totalProducts = await productSchema.countDocuments();
+    const pipeline = [
       {
         $lookup: {
           from: "categories",
@@ -288,6 +333,7 @@ const updateProduct = async (req, res) => {
 module.exports = {
   createProduct,
   getAllProduct,
+  getAdminProduct,
   getProductDetails,
   updateProduct,
 };
