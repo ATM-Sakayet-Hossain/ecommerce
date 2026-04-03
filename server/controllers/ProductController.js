@@ -4,6 +4,7 @@ const {
   uploadToCloudinary,
   deleteFromCloudinary,
 } = require("../services/cloudinaryService");
+const { getPagination } = require("../services/helper");
 const { responseHandler } = require("../Utils/responseHandler");
 const SIZE_ENUM = ["s", "m", "l", "xl", "2xl", "3xl"];
 
@@ -113,16 +114,34 @@ const createProduct = async (req, res) => {
 };
 const getAllProduct = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.page) || 10;
-    const category = req.query.category;
-    const skip = (page - 1) * limit;
-    const totalProducts = await productSchema.countDocuments();
+    const { page, limit, skip } = getPagination(req);
+    const { category, search, minPrice, maxPrice, sortBy = "createdAt", order = "desc", } = req.query;
+    const userRole = req.user?.role;
+    const isAdmin = ["admin", "editor"].includes(userRole)
+    const andConditions = [];
+    if (!isAdmin) {
+      andConditions.push({ isActive: true });
+    }
+    if (search) {
+      andConditions.push({
+        $or: [
+          { title: { $regex: search, $options: "i" } },
+          { description: { $regex: search, $options: "i" } },
+          { brand: { $regex: search, $options: "i" } },
+        ],
+      });
+    }
+    if (minPrice || maxPrice) {
+      const priceFilter = {};
+      if (minPrice) priceFilter.$gte = Number(minPrice);
+      if (maxPrice) priceFilter.$lte = Number(maxPrice);
+      andConditions.push({ price: priceFilter });
+    }
+    const matchproduct = andConditions.length > 0 ? { $and: andConditions } : {};
+    const sortOrder = order === "asc" ? 1 : -1;
     const pipeline = [
       {
-        $match: {
-          isActive: true,
-        },
+        $match: matchproduct,
       },
       {
         $lookup: {
@@ -132,68 +151,36 @@ const getAllProduct = async (req, res) => {
           as: "category",
         },
       },
-      { $unwind: "$category" },
-      { $sort: { createdAt: -1 } },
-      { $skip: skip },
-      { $limit: limit },
-    ];
-    if (category) {
-      pipeline.push({
-        $match: {
-          "category.slug": category,
-        },
-      });
-    }
-    const productList = await productSchema.aggregate(pipeline);
-    const totalPages = Math.ceil(totalProducts / limit);
-    responseHandler.success(res, 200, {
-      product: productList,
-      page,
-      limit,
-      totalPages,
-      hasNextPage: page < totalPages,
-      hasPrevPage: page > 1,
-    });
-  } catch (error) {
-    responseHandler.error(
-      res,
-      500,
-      "Something went wrong. Please try again later",
-    );
-  }
-};
-const getAdminProduct = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.page) || 10;
-    const category = req.query.category;
-    const skip = (page - 1) * limit;
-    const totalProducts = await productSchema.countDocuments();
-    const pipeline = [
       {
-        $lookup: {
-          from: "categories",
-          localField: "category",
-          foreignField: "_id",
-          as: "category",
+        $unwind: {
+          path: "$category",
+          preserveNullAndEmptyArrays: true,
         },
       },
-      { $unwind: "$category" },
-      { $sort: { createdAt: -1 } },
-      { $skip: skip },
-      { $limit: limit },
-    ];
-    if (category) {
-      pipeline.push({
-        $match: {
-          "category.slug": category,
+      ...(category
+        ? [
+            {
+              $match: {
+                "category.slug": category,
+              },
+            },
+          ]
+        : []),
+      { $sort: { [sortBy]: sortOrder } },
+      {
+        $facet: {
+          data: [{ $skip: skip }, { $limit: limit }],
+          totalCount: [{ $count: "count" }],
         },
-      });
-    }
-    const productList = await productSchema.aggregate(pipeline);
-    const totalPages = Math.ceil(totalProducts / limit);
+      },
+    ];
+    const result = await productSchema.aggregate(pipeline);
+    const productList = result[0]?.data || [];
+    const total = result[0]?.totalCount[0]?.count || 0;
+    const totalPages = Math.ceil(total / limit);
     responseHandler.success(res, 200, {
       product: productList,
+      total,
       page,
       limit,
       totalPages,
@@ -201,6 +188,7 @@ const getAdminProduct = async (req, res) => {
       hasPrevPage: page > 1,
     });
   } catch (error) {
+    console.log(error);
     responseHandler.error(
       res,
       500,
@@ -333,7 +321,6 @@ const updateProduct = async (req, res) => {
 module.exports = {
   createProduct,
   getAllProduct,
-  getAdminProduct,
   getProductDetails,
   updateProduct,
 };

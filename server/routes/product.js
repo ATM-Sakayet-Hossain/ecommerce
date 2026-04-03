@@ -7,7 +7,6 @@ const {
   getAllProduct,
   getProductDetails,
   updateProduct,
-  getAdminProduct,
 } = require("../controllers/ProductController");
 const route = express.Router();
 const upload = multer();
@@ -22,8 +21,8 @@ route.post(
   ]),
   createProduct,
 );
-route.get("/allProduct", getAllProduct);
-route.get("/admin/allProduct",authMiddleWare, roleCheckMiddleware("admin", "editor"), getAdminProduct);
+route.get("/admin/get",authMiddleWare, roleCheckMiddleware("admin", "editor"), getAllProduct);
+route.get("/get", getAllProduct);
 route.get("/:slug", getProductDetails);
 route.put(
   "/update/:slug",

@@ -61,7 +61,7 @@ const productSchema = new mongoose.Schema(
     images: {
       type: Array,
     },
-    iratings: {
+    ratings: {
       average: { type: Number, default: 0, min: 0, max: 5 },
       count: { type: Number, default: 0, min: 0 },
     },
