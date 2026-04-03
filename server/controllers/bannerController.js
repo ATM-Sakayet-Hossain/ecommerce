@@ -49,7 +49,7 @@ const getAllBanners = async (req, res) => {
   try {
     const { page, limit, skip } = getPagination(req);
     const userRole = req.user?.role;
-    const matchStage = {
+    let matchStage = {
       isActive: true,
       startDate: { $lte: now },
       endDate: { $gte: now },
