@@ -1,7 +1,7 @@
 const slugify = require("slugify");
 const categorySchema = require("../models/categorySchema");
 const {uploadToCloudinary, deleteFromCloudinary} = require("../services/cloudinaryService");
-const { responseHandler } = require("../utils/responseHandler");
+const { responseHandler } = require("../Utils/responseHandler");
 
 const createCategory = async (req, res) => {
     const { name, description, sortOrder } = req.body

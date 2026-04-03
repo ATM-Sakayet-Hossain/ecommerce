@@ -1,7 +1,7 @@
 const bannerSchema = require("../model/bannerSchema")
 const { uploadToCloudinary, deleteFromCloudinary } = require("../services/cloudinaryService")
 const { parseDateOrNull, validateDateRange } = require("../services/validation")
-const { responseHandler } = require("../utils/responseHandler")
+const { responseHandler } = require("../Utils/responseHandler")
 const isProvided = (v) => v !== undefined && v !== null
 
 const createBanner = async (req, res) => {

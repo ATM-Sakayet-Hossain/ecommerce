@@ -18,7 +18,7 @@ const {
   deleteFromCloudinary,
   uploadToCloudinary,
 } = require("../services/cloudinaryService");
-const { responseHandler } = require("../utils/responseHandler");
+const { responseHandler } = require("../Utils/responseHandler");
 
 const registration = async (req, res) => {
   try {
