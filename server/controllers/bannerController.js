@@ -48,7 +48,16 @@ const createBanner = async (req, res) => {
 const getAllBanners = async (req, res) => {
   try {
     const { page, limit, skip } = getPagination(req);
-    const matchStage = {};
+    const userRole = req.user?.role;
+    const matchStage = {
+      isActive: true,
+      startDate: { $lte: now },
+      endDate: { $gte: now },
+    };
+    const isAdmin = userRole === "admin" || userRole === "editor";
+    if (isAdmin) {
+      matchStage = {};
+    }
     const result = await bannerSchema.aggregate([
       { $match: matchStage },
       { $sort: { createdAt: -1 } },
@@ -66,62 +75,14 @@ const getAllBanners = async (req, res) => {
       200,
       {
         banners,
-        pagination: {
-          total,
-          page,
-          limit,
-          totalPage: Math.ceil(total / limit),
-          hasNext: page * limit < total,
-          hasPrev: page > 1,
-        },
+        total,
+        page,
+        limit,
+        totalPage: Math.ceil(total / limit),
+        hasNext: page * limit < total,
+        hasPrev: page > 1,
       },
       "All banners fetched",
-    );
-  } catch (error) {
-    responseHandler.error(
-      res,
-      500,
-      "Something went wrong. Please try again later",
-    );
-  }
-};
-const getActiveBanners = async (req, res) => {
-  try {
-    const now = new Date();
-    const { page, limit, skip } = getPagination(req);
-    const result = await bannerSchema.aggregate([
-      {
-        $match: {
-          isActive: true,
-          startDate: { $lte: now },
-          endDate: { $gte: now },
-        },
-      },
-      { $sort: { createdAt: -1 } },
-      {
-        $facet: {
-          data: [{ $skip: skip }, { $limit: limit }],
-          totalCount: [{ $count: "count" }],
-        },
-      },
-    ]);
-    const banners = result[0].data;
-    const total = result[0].totalCount[0]?.count || 0;
-    responseHandler.success(
-      res,
-      200,
-      {
-        banners,
-        pagination: {
-          total,
-          page,
-          limit,
-          totalPage: Math.ceil(total / limit),
-          hasNext: page * limit < total,
-          hasPrev: page > 1,
-        },
-      },
-      "Active banners fetched",
     );
   } catch (error) {
     responseHandler.error(
@@ -187,7 +148,6 @@ const deleteBanner = async (req, res) => {
 module.exports = {
   createBanner,
   getAllBanners,
-  getActiveBanners,
   updateBanner,
   deleteBanner,
 };
