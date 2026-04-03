@@ -1,4 +1,4 @@
-const { responseHandler } = require("../Utils/responseHandler")
+const { responseHandler } = require("../utils/responseHandler")
 
 const roleCheckMiddleware = (...roles) => {
     return (req, res, next) => {
@@ -6,9 +6,9 @@ const roleCheckMiddleware = (...roles) => {
             if (roles.includes(req.user.role)) {
                 return next()
             }
-            return responseHandler(res, "Contract Your Admin", 400)
+            return responseHandler.error(res, 400, "Contract Your Admin")
         } catch (error) {
-            return responseHandler(res, "Invalid Request", 500)
+            return responseHandler.error(res, 500, "Invalid Request")
         }
     }
 }

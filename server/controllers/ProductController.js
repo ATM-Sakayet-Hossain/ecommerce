@@ -5,7 +5,7 @@ const {
   deleteFromCloudinary,
 } = require("../services/cloudinaryService");
 const { getPagination } = require("../services/helper");
-const { responseHandler } = require("../Utils/responseHandler");
+const { responseHandler } = require("../utils/responseHandler");
 const SIZE_ENUM = ["s", "m", "l", "xl", "2xl", "3xl"];
 
 const createProduct = async (req, res) => {
@@ -71,7 +71,7 @@ const createProduct = async (req, res) => {
     let imagesUrl = [];
     if (images) {
       const resPromise = images.map(async (i) =>
-        uploadToCloudinary(i, "products"),
+        uploadToCloudinary(images, "products"),
       );
       const result = await Promise.all(resPromise);
       imagesUrl = result.map((r) => r.secure_url);
