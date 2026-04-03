@@ -57,6 +57,13 @@ const generateOrderNumber = async (orderData) => {
     const sequence = String(count + 1).padStart(4, "0"); // 0001
     return `${year}${month}${day}${sequence}`;
 };
+const getPagination = (req) => {
+  const page = Math.max(parseInt(req.query.page) || 1, 1)
+  const limit = Math.max(parseInt(req.query.limit) || 10, 1)
+  const skip = (page - 1) * limit
+
+  return { page, limit, skip }
+}
 
 module.exports = {
   generateOTP,
@@ -65,5 +72,6 @@ module.exports = {
   generateResetPassToken,
   VerifiedToken,
   hashResetToken,
-  generateOrderNumber
+  generateOrderNumber,
+  getPagination
 };
