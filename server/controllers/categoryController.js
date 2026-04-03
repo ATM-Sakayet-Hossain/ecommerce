@@ -8,7 +8,7 @@ const { responseHandler } = require("../Utils/responseHandler");
 const { getPagination } = require("../services/helper");
 
 const createCategory = async (req, res) => {
-  const { name, description, sortOrder } = req.body;
+  const { name, description, parent, sortOrder } = req.body;
   const thumbnail = req.file;
   try {
     if (!name)
@@ -19,11 +19,19 @@ const createCategory = async (req, res) => {
     const existingslug = await categorySchema.findOne({ slug });
     if (existingslug)
       return responseHandler.error(res, 400, "Category already exists");
+    let parentId = null;
+    if (parent) {
+      const parentCategory = await categorySchema.findById(parent);
+      if (!parentCategory)
+        return responseHandler.error(res, 400, "Parent category not found");
+      parentId = parentCategory._id;
+    }
     const imgRes = await uploadToCloudinary(thumbnail, "category");
     const category = new categorySchema({
       name,
       slug,
       description,
+      parent: parentId,
       thumbnail: imgRes.secure_url,
       sortOrder: sortOrder || 0,
       createdBy: req.user?._id,
@@ -86,14 +94,26 @@ const getAllCategory = async (req, res) => {
 };
 const updateCategory = async (req, res) => {
   const { slug } = req.params;
-  const { name, description, sortOrder, isActive } = req.body;
+  const { name, description, parent, sortOrder, isActive } = req.body;
   const thumbnail = req.file;
   try {
     const category = await categorySchema.findOne({ slug });
     if (!category) return responseHandler.error(res, 400, "Category not found");
+    if (parent && category._id.toString() === parent.toString())
+      return responseHandler.error(
+        res,
+        400,
+        "Category cannot be its own parent",
+      );
+    if (parent) {
+      const parentExists = await categorySchema.findById(parent);
+      if (!parentExists)
+        return responseHandler.error(res, 400, "Parent category not found");
+    }
     if (name) category.name = name;
     if (description) category.description = description;
     if (sortOrder !== undefined) category.sortOrder = Number(sortOrder);
+    if (parent !== undefined) category.parent = parent || null;
     if (isActive !== undefined) category.isActive = isActive;
     if (thumbnail && category.thumbnail) {
       const publicId = category.thumbnail.split("/").pop().split(".")[0];

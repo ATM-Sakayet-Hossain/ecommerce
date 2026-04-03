@@ -20,6 +20,11 @@ const categorySchema = new mongoose.Schema({
     description: {
         type: String,
     },
+    parent: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "category",
+        default: null
+    },
     isActive: {
         type: Boolean,
         default: true
