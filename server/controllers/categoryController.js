@@ -1,6 +1,7 @@
+const slugify = require("slugify");
 const categorySchema = require("../models/categorySchema");
-const {uploadToCloudinary} = require("../services/cloudinaryService");
-const { responseHandler } = require("../Utils/responseHandler");
+const {uploadToCloudinary, deleteFromCloudinary} = require("../services/cloudinaryService");
+const { responseHandler } = require("../utils/responseHandler");
 
 const createCategory = async (req, res) => {
     const { name, description, sortOrder } = req.body
@@ -22,7 +23,7 @@ const createCategory = async (req, res) => {
         updatedBy: req.user?._id
         })
         await category.save()
-        responseHandler.success(res, 201, category, "Category created successfully")
+        responseHandler.success(res, 201, "Category created successfully")
     } catch (error) {
         console.log(error)
         responseHandler.error(res, 500, "Something went wrong. Please try again later")
@@ -65,7 +66,7 @@ const updateCategory = async (req, res) => {
         }
         category.updatedBy = req.user?._id
         await category.save()
-        responseHandler.success(res, 200, category,  "Category updated successfully")
+        responseHandler.success(res, 200, "Category updated successfully")
     } catch (error) {
         console.log(error)
         responseHandler.error(res, 500, "Something went wrong. Please try again later")

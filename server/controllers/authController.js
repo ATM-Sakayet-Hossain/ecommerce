@@ -18,7 +18,7 @@ const {
   deleteFromCloudinary,
   uploadToCloudinary,
 } = require("../services/cloudinaryService");
-const { responseHandler } = require("../Utils/responseHandler");
+const { responseHandler } = require("../utils/responseHandler");
 
 const registration = async (req, res) => {
   try {
@@ -69,7 +69,6 @@ const registration = async (req, res) => {
     responseHandler.success(
       res,
       201,
-      user,
       "User signed up successfully, Please verify your email before logging in.",
     );
   } catch (error) {
@@ -97,7 +96,7 @@ const verification = async (req, res) => {
     user.otp = null;
     user.otpExpires = null;
     await user.save();
-    responseHandler.success(res, 200, user, "Varificaation successfully");
+    responseHandler.success(res, 200, "Varificaation successfully");
   } catch (error) {
     responseHandler.error(
       res,
@@ -130,7 +129,7 @@ const resendOTP = async (req, res) => {
       templete: emailVerifyTem,
       fullName: user.fullName,
     });
-    responseHandler.success(res, 200, user, "OTP send you mail successfully");
+    responseHandler.success(res, 200, "OTP send you mail successfully");
   } catch (error) {
     responseHandler.error(
       res,
@@ -245,7 +244,6 @@ const forgetPass = async (req, res) => {
     responseHandler.success(
       res,
       200,
-      existingUser,
       "A reset password link has been sent to your email",
     );
   } catch (error) {
@@ -284,7 +282,6 @@ const resetPassword = async (req, res) => {
     responseHandler.success(
       res,
       200,
-      existingUser,
       "Your password has been reset successfully. You can now log in.",
     );
   } catch (error) {
@@ -378,7 +375,7 @@ const updateUserProfile = async (req, res) => {
     if (phone) user.phone = phone;
     if (address) user.address = address;
     user.save();
-    responseHandler.success(res, 200, user);
+    responseHandler.success(res, 200, "user Update successfully");
   } catch (error) {
     responseHandler.error(
       res,
@@ -415,7 +412,7 @@ const getAuthStatus = async (req, res) => {
   try {
     const user = await userSchema.findById(userId).select("status email role");
     if (!user) return responseHandler.error(res, 400, "Unauthorized User");
-    responseHandler.success(res, 200, user, "User status fetched");
+    responseHandler.success(res, 200, "User status fetched");
   } catch (error) {
     responseHandler.error(
       res,
@@ -456,7 +453,7 @@ const userStatus = async (req, res) => {
     if (!user) return responseHandler.error(res, 400, "user not found");
     user.status = user.status === "active" ? "banned" : "active";
     await user.save();
-    responseHandler.success(res, 200, user, `user ${user.status} successfully`);
+    responseHandler.success(res, 200, `user ${user.status} successfully`);
   } catch (error) {
     console.log(error);
     responseHandler.error(

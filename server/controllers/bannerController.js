@@ -27,7 +27,7 @@ const createBanner = async (req, res) => {
       updatedBy: req.user?._id,
     })
     await banner.save()
-    responseHandler.success(res, 201, banner, "Banner created successfully")
+    responseHandler.success(res, 201, "Banner created successfully")
   } catch (error) {
     responseHandler.error(res, 500, "Something went wrong. Please try again later")
   }
@@ -72,7 +72,7 @@ const updateBanner = async (req, res) => {
     }
     existingBanner.updatedBy = req.user?._id
     await existingBanner.save()
-    responseHandler.success(res, 200, existingBanner, "Banner updated successfully")
+    responseHandler.success(res, 200, "Banner updated successfully")
   } catch (error) {
     responseHandler.error(res, 500, "Something went wrong. Please try again later")
   }
@@ -84,7 +84,7 @@ const deleteBanner = async (req, res) => {
     if (!existingBanner) return responseHandler.error(res, 404, "Banner not found")
       const publicId = existingBanner.image.split("/").pop().split(".")[0]
       await deleteFromCloudinary(`banner/${publicId}`)
-    responseHandler.success(res, 200, existingBanner, "Banner deleted successfully")
+    responseHandler.success(res, 200, "Banner deleted successfully")
   } catch (error) {
     console.log(error)
     responseHandler.error(res, 500, "Something went wrong. Please try again later")

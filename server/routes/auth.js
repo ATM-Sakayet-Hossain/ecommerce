@@ -21,7 +21,7 @@ const authMiddleWare = require("../middleware/authMiddleWare");
 const roleCheckMiddleware = require("../middleware/roleCheckMiddleware");
 const route = express.Router();
 
-route.post("/registration", registration);
+route.post("/register", registration);
 route.post("/verifyOTP", verification);
 route.post("/resendOTP", resendOTP);
 route.post("/login", login);
