@@ -73,7 +73,7 @@ const getAllCategory = async (req, res) => {
         hasNext: page * limit < total,
         hasPrev: page > 1,
       },
-      "All banners fetched",
+      "All categorys fetched",
     );
   } catch (error) {
     console.log(error);
