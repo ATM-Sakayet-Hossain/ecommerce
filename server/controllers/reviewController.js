@@ -1,17 +1,7 @@
-const mongoose = require("mongoose");
 const productSchema = require("../models/productSchema");
 const { responseHandler } = require("../utils/responseHandler");
 const reviewSchema = require("../models/reviewSchema");
 const { uploadToCloudinary } = require("../services/cloudinaryService");
-
-const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
-const parseRating = (value) => {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return null;
-  return n;
-};
-const isAdminOrEditor = (user) =>
-  user?.role === "admin" || user?.role === "editor";
 
 const createReview = async (req, res) => {
   try {
