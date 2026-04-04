@@ -102,7 +102,6 @@ const getCart = async (req, res) => {
     if (!carts.length) return responseHandler.error(res, 404, "cart not Found");
     return responseHandler.success(res, 200, carts, "cart feched");
   } catch (error) {
-    console.log(error);
     responseHandler.error(
       res,
       500,
