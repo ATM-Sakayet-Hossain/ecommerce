@@ -8,6 +8,7 @@ const {
   generateResetPassToken,
   hashResetToken,
   VerifiedToken,
+  getPagination,
 } = require("../services/helper");
 const { isValidEmail, isStrongPassword } = require("../services/validation");
 const {
@@ -455,7 +456,93 @@ const userStatus = async (req, res) => {
     await user.save();
     responseHandler.success(res, 200, `user ${user.status} successfully`);
   } catch (error) {
-    console.log(error);
+    responseHandler.error(
+      res,
+      500,
+      "Something went wrong. Please try again later",
+    );
+  }
+};
+const GetAllUsers = async (req, res) => {
+  try {
+    const { page, limit, skip } = getPagination(req);
+    const {
+      search,
+      status,
+      role,
+      fullName,
+      email,
+      phone,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = req.query;
+    const matchUser = {};
+    if (status) matchUser.status = status;
+    if (role) matchUser.role = role;
+    if (fullName) matchUser.fullName = { $regex: fullName, $options: "i" };
+    if (email) matchUser.email = { $regex: email, $options: "i" };
+    if (phone) matchUser.phone = { $regex: phone, $options: "i" };
+    if (search) {
+      matchUser.$or = [
+        { fullName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+      ];
+    }
+    // search fields name
+    const allowedSortFields = [
+      "createdAt",
+      "fullName",
+      "email",
+      "phone",
+      "role",
+      "status",
+    ];
+    const safeSortBy = allowedSortFields.includes(sortBy)
+      ? sortBy
+      : "createdAt";
+    const order = sortOrder === "asc" ? 1 : -1;
+    const result = await userSchema.aggregate([
+      { $match: matchUser },
+      {
+        $project: {
+          password: 0,
+          otp: 0,
+          otpExpires: 0,
+          resetPassToken: 0,
+          resetExpires: 0,
+        },
+      },
+      {
+        $sort: {
+          [safeSortBy]: order,
+        },
+      },
+      {
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [{ $skip: skip }, { $limit: limit }],
+        },
+      },
+    ]);
+    const total = result[0]?.metadata[0]?.total || 0;
+    const allUser = result[0]?.data || [];
+    responseHandler.success(
+      res,
+      200,
+      {
+        allUser,
+        total,
+        page,
+        limit,
+        totalPage: Math.ceil(total / limit),
+        hasNext: page * limit < total,
+        hasPrev: page > 1,
+      },
+      "All Uers fetched",
+    );
+  } catch (error) {
+    console.error(error);
     responseHandler.error(
       res,
       500,
@@ -478,4 +565,5 @@ module.exports = {
   getAuthStatus,
   deactivateAccount,
   userStatus,
+  GetAllUsers,
 };

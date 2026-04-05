@@ -1,6 +1,6 @@
 const express = require("express");
-const multer = require("multer")
-const upload = multer()
+const multer = require("multer");
+const upload = multer();
 const {
   registration,
   verification,
@@ -16,6 +16,7 @@ const {
   getAuthStatus,
   deactivateAccount,
   userStatus,
+  GetAllUsers,
 } = require("../controllers/authController");
 const authMiddleWare = require("../middleware/authMiddleWare");
 const roleCheckMiddleware = require("../middleware/roleCheckMiddleware");
@@ -25,15 +26,26 @@ route.post("/register", registration);
 route.post("/verifyOTP", verification);
 route.post("/resendOTP", resendOTP);
 route.post("/login", login);
-route.post("/logout", authMiddleWare, logout)
+route.post("/logout", authMiddleWare, logout);
 route.post("/forgetPass", forgetPass);
 route.post("/resetPass", resetPassword);
-route.post("/changePassword", authMiddleWare, changePassword)
+route.post("/changePassword", authMiddleWare, changePassword);
 route.get("/getprofile", authMiddleWare, getprofile);
-route.put("/updateUserProfile", authMiddleWare, upload.single("avatar"), updateUserProfile);
-route.post("/refreshToken", refreshAccessToken)
-route.get("/getAuthStatus", authMiddleWare, getAuthStatus)
-route.post("/deactivateAccount", authMiddleWare, deactivateAccount)
-route.put("/userStatus", authMiddleWare, roleCheckMiddleware("admin"), userStatus)
+route.put(
+  "/updateUserProfile",
+  authMiddleWare,
+  upload.single("avatar"),
+  updateUserProfile,
+);
+route.post("/refreshToken", refreshAccessToken);
+route.get("/getAuthStatus", authMiddleWare, getAuthStatus);
+route.post("/deactivateAccount", authMiddleWare, deactivateAccount);
+route.put(
+  "/userStatus",
+  authMiddleWare,
+  roleCheckMiddleware("admin"),
+  userStatus,
+);
+route.get("/admin/users", authMiddleWare, roleCheckMiddleware("admin", "editor"), GetAllUsers);
 
 module.exports = route;
