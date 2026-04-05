@@ -42,7 +42,6 @@ const orderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "user",
       required: true,
-      unique: true,
     },
     items: [orderItems],
     shippingAddress: {
@@ -72,6 +71,25 @@ const orderSchema = new mongoose.Schema(
       unique: true,
     },
     deliveredAt: Date,
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    statusLogs: [
+      {
+        status: String,
+        updatedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        role: String,
+        note: String,
+        updatedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   { timestamps: true },
 );

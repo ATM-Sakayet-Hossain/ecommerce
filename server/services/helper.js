@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+// const ordersSchema = require("../models/ordersSchema");
 
 function generateOTP() {
   return Math.floor(1000 + Math.random() * 9000);
@@ -12,7 +13,7 @@ const generateAccessToken = (user) => {
       role: user.role,
     },
     process.env.JWT_SECRET,
-    { expiresIn: "1h" }
+    { expiresIn: "1h" },
   );
 };
 const generateRefreshToken = (user) => {
@@ -23,7 +24,7 @@ const generateRefreshToken = (user) => {
       role: user.role,
     },
     process.env.JWT_SECRET,
-    { expiresIn: "1d" }
+    { expiresIn: "1d" },
   );
 };
 const generateResetPassToken = () => {
@@ -32,38 +33,41 @@ const generateResetPassToken = () => {
     .createHash("sha256")
     .update(resetToken)
     .digest("hex");
-  return {resetToken, hashedToken}
+  return { resetToken, hashedToken };
 };
-const hashResetToken = (token) =>{
+const hashResetToken = (token) => {
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
   return hashedToken;
-}
+};
 const VerifiedToken = (token) => {
   return jwt.verify(token, process.env.JWT_SECRET);
 };
-const generateOrderNumber = async (orderData) => {
-    const today = new Date();
-    const year = String(today.getFullYear()).slice(-2); // 26
-    const month = String(today.getMonth() + 1).padStart(2, "0"); // 04
-    const day = String(today.getDate()).padStart(2, "0"); // 01
-    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
-    const count = await Order.countDocuments({
-        createdAt: {
-            $gte: startOfDay,
-            $lte: endOfDay
-        }
-    });
-    const sequence = String(count + 1).padStart(4, "0"); // 0001
-    return `${year}${month}${day}${sequence}`;
+const generateOrderNumber = async (Model, prefixCode, fieldName) => {
+  const today = new Date();
+  const year = String(today.getFullYear()).slice(-2);
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  const prefix = `${prefixCode}${year}${month}${day}`; // `PA${year}${month}${day}`
+  // find last order of today
+  const lastOrder = await Model.findOne({
+    [fieldName]: { $regex: `^${prefix}` },
+  }).sort({ [fieldName]: -1 });
+  let sequence = 1;
+  if (lastOrder) {
+    const lastNumber = lastOrder[fieldName];
+    const lastSequence = parseInt(lastNumber.slice(-4)); // last 4 digits
+    sequence = lastSequence + 1;
+  }
+  const newSequence = String(sequence).padStart(4, "0");
+  return `${prefix}${newSequence}`;
 };
 const getPagination = (req) => {
-  const page = Math.max(parseInt(req.query.page) || 1, 1)
-  const limit = Math.max(parseInt(req.query.limit) || 10, 1)
-  const skip = (page - 1) * limit
+  const page = Math.max(parseInt(req.query.page) || 1, 1);
+  const limit = Math.max(parseInt(req.query.limit) || 10, 1);
+  const skip = (page - 1) * limit;
 
-  return { page, limit, skip }
-}
+  return { page, limit, skip };
+};
 
 module.exports = {
   generateOTP,
@@ -73,5 +77,5 @@ module.exports = {
   VerifiedToken,
   hashResetToken,
   generateOrderNumber,
-  getPagination
+  getPagination,
 };
