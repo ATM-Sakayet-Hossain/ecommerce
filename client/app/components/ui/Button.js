@@ -15,13 +15,12 @@ const Button = React.forwardRef(
   ) => {
     const base =
       "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50";
-
     const variants = {
       primary:
-        "w-full bg-linear-to-r from-blue-600 to-purple-600 text-white hover:from-purple-700 hover:to-blue-700 text-xl",
+        "bg-blue-400 text-white hover:bg-green-500 text-xl",
       gradient:
-        "bg-linear-to-r from-purple-600 to-blue-600 px-10 text-white hover:from-blue-700 hover:to-purple-700 text-xl",
-      outline: "border border-gray-300 text-white hover:bg-gray-100 hover:text-black",
+        "bg-linear-to-r from-purple-600 to-blue-600 text-white hover:from-blue-700 hover:to-purple-700 text-xl",
+      outline: "border border-blue-400 bg-yellow-400 text-white text-xl hover:bg-red-700 hover:border-red-400 hover:text-white",
     };
 
     return (

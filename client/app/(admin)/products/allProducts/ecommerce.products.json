@@ -1,0 +1,98 @@
+[{
+  "_id": {
+    "$oid": "69cfe53a8086a2888f2e9964"
+  },
+  "title": "Long Sleeve Casual Shirts",
+  "slug": "long-sleeve-casual-shirts",
+  "description": "Band Name : Smart Eshop(DK)\nFabrics : Men's Stylish & Fashionable Trendy Good Looking Long Sleeve Casual Shirts By Smart Eshop(DK)\nQuality: Export quality\nGender: Men\nFashionable & Slim Fit\nColor: As given picture\nSize: M, L, XL\nM- long: 29\", body: 40\"\nL- long: 30 \", body: 42\"\nXL- long: 31\", body: 44\"",
+  "category": {
+    "$oid": "699b800cb10f0422fdd08710"
+  },
+  "price": 790,
+  "discountPercentage": 0,
+  "variants": [
+    {
+      "sku": "NIKE-AM-BLK-42",
+      "color": "Black",
+      "size": "m",
+      "stock": 10,
+      "_id": {
+        "$oid": "69a79f4733c3c4a1c33d606a"
+      }
+    },
+    {
+      "sku": "NIKE-AM-WHT-41",
+      "color": "White",
+      "size": "s",
+      "stock": 5,
+      "_id": {
+        "$oid": "69a79f4733c3c4a1c33d606b"
+      }
+    }
+  ],
+  "tags": [],
+  "thumbnail": "https://res.cloudinary.com/dqc9xuhqa/image/upload/v1772592965/products/sbtitsv5monasql0hnfy.webp",
+  "images": [
+    "https://res.cloudinary.com/dqc9xuhqa/image/upload/v1772592966/products/pbr8gsdwvwtevpxbvy6n.webp",
+    "https://res.cloudinary.com/dqc9xuhqa/image/upload/v1772592968/products/otfxqhhtumcebtr02ujt.webp",
+    "https://res.cloudinary.com/dqc9xuhqa/image/upload/v1772592967/products/jwhfmbl4getzz5k3vbzi.webp",
+    "https://res.cloudinary.com/dqc9xuhqa/image/upload/v1772592968/products/nehtnw8gnbvvzw1kh7nx.jpg"
+  ],
+  "isActive": true,
+  "createdAt": {
+    "$date": "2026-03-04T02:56:07.654Z"
+  },
+  "updatedAt": {
+    "$date": "2026-03-04T02:56:07.654Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69cfe5e38086a2888f2e9968"
+  },
+  "title": "Short Sleeve Casual Shirts",
+  "slug": "short-sleeve-casual-shirts",
+  "description": "Band Name : Smart Eshop(DK)\nFabrics : Men's Stylish & Fashionable Trendy Good Looking Long Sleeve Casual Shirts By Smart Eshop(DK)\nQuality: Export quality\nGender: Men\nFashionable & Slim Fit\nColor: As given picture\nSize: M, L, XL\nM- long: 29\", body: 40\"\nL- long: 30 \", body: 42\"\nXL- long: 31\", body: 44\"",
+  "category": {
+    "$oid": "699b800cb10f0422fdd08710"
+  },
+  "price": 810,
+  "discountPercentage": 10,
+  "variants": [
+    {
+      "sku": "NIKE-AM-WHT-42",
+      "color": "Black",
+      "size": "m",
+      "stock": 10,
+      "_id": {
+        "$oid": "69a79f4733c3c4a1c33d606a"
+      }
+    },
+    {
+      "sku": "NIKE-AM-BLT-41",
+      "color": "White",
+      "size": "s",
+      "stock": 5,
+      "_id": {
+        "$oid": "69a79f4733c3c4a1c33d606b"
+      }
+    }
+  ],
+  "tags": [],
+  "thumbnail": "https://res.cloudinary.com/dqc9xuhqa/image/upload/v1772592965/products/sbtitsv5monasql0hnfy.webp",
+  "images": [
+    "https://res.cloudinary.com/dqc9xuhqa/image/upload/v1772592966/products/pbr8gsdwvwtevpxbvy6n.webp",
+    "https://res.cloudinary.com/dqc9xuhqa/image/upload/v1772592968/products/otfxqhhtumcebtr02ujt.webp",
+    "https://res.cloudinary.com/dqc9xuhqa/image/upload/v1772592967/products/jwhfmbl4getzz5k3vbzi.webp",
+    "https://res.cloudinary.com/dqc9xuhqa/image/upload/v1772592968/products/nehtnw8gnbvvzw1kh7nx.jpg"
+  ],
+  "isActive": true,
+  "createdAt": {
+    "$date": "2026-03-04T02:56:07.654Z"
+  },
+  "updatedAt": {
+    "$date": "2026-03-04T02:56:07.654Z"
+  },
+  "__v": 0
+}]

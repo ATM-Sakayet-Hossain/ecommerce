@@ -1,9 +1,9 @@
 "use client";
 import { useState } from "react";
-import Input from "../components/ui/input";
-import Button from "../components/ui/button";
+import Input from "../../components/ui/input";
+import Button from "../../components/ui/Button";
 
-const page = () => {
+const Page = () => {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -156,4 +156,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default Page;
