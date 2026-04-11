@@ -1,6 +1,7 @@
 import React from "react";
 import { X } from "lucide-react";
 import Input from "../../ui/input";
+import Image from "next/image";
 
 const ProductImages = ({ formData, setFormData }) => {
   const handleUpload = (e) => {
@@ -44,7 +45,7 @@ const ProductImages = ({ formData, setFormData }) => {
       <div className="grid grid-cols-4 gap-2 mt-4">
         {formData.images.map((img, i) => (
           <div key={i} className="relative">
-            <img
+            <Image
               src={URL.createObjectURL(img)}
               alt={`Product ${i + 1}`}
               className="h-20 w-full object-cover"

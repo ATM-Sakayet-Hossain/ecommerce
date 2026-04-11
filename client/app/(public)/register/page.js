@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import Input from "../../components/ui/input";
 import Button from "../../components/ui/Button";
 
@@ -67,20 +68,18 @@ const Page = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-lg bg-white shadow-lg rounded-2xl p-6 space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-1">
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Create Account
+    <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl gap-8 px-4 py-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+      <div className="order-2 lg:order-1 w-full max-w-2xl justify-self-center rounded-4xl border border-white/70 bg-white/90 p-6 shadow-2xl shadow-slate-200/80 backdrop-blur">
+        <div className="space-y-1 text-center">
+          <h1 className="text-2xl font-extrabold text-slate-900">
+            Create account
           </h1>
-          <p className="text-sm text-gray-500">
-            Fill in your details to get started
+          <p className="text-sm text-slate-500">
+            Join the premium shopping experience
           </p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <Input
             label="Full Name"
             name="fullName"
@@ -145,12 +144,48 @@ const Page = () => {
             Register
           </Button>
         </form>
-        <p className="text-center text-sm text-gray-500">
+        <p className="mt-5 text-center text-sm text-slate-500">
           Already have an account?{" "}
-          <button className="text-black font-medium hover:underline">
+          <Link
+            href="/login"
+            className="font-semibold text-emerald-700 hover:underline"
+          >
             Login
-          </button>
+          </Link>
         </p>
+      </div>
+
+      <div className="order-1 lg:order-2 relative overflow-hidden rounded-4xl border border-white/70 bg-linear-to-br from-emerald-700 via-cyan-700 to-slate-900 p-8 text-white shadow-2xl shadow-slate-300/50">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_35%)]" />
+        <div className="relative space-y-6">
+          <div className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-emerald-100">
+            Fast onboarding
+          </div>
+          <h2 className="max-w-xl text-4xl font-black tracking-tight md:text-6xl">
+            Create your account and unlock a better shopping flow.
+          </h2>
+          <p className="max-w-xl text-base leading-7 text-slate-200 md:text-lg">
+            Use one profile across carts, orders, wishlist, and support. Built
+            for speed, trust, and conversion.
+          </p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {[
+              ["1", "Profile"],
+              ["2", "Secure"],
+              ["3", "Checkout"],
+            ].map(([value, label]) => (
+              <div
+                key={label}
+                className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur"
+              >
+                <p className="text-xl font-extrabold">{value}</p>
+                <p className="text-xs uppercase tracking-[0.3em] text-emerald-100">
+                  {label}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -14,7 +14,7 @@
     {
       "sku": "NIKE-AM-BLK-42",
       "color": "Black",
-      "size": "m",
+      "size": "M",
       "stock": 10,
       "_id": {
         "$oid": "69a79f4733c3c4a1c33d606a"
@@ -23,7 +23,7 @@
     {
       "sku": "NIKE-AM-WHT-41",
       "color": "White",
-      "size": "s",
+      "size": "S",
       "stock": 5,
       "_id": {
         "$oid": "69a79f4733c3c4a1c33d606b"
@@ -63,7 +63,7 @@
     {
       "sku": "NIKE-AM-WHT-42",
       "color": "Black",
-      "size": "m",
+      "size": "M",
       "stock": 10,
       "_id": {
         "$oid": "69a79f4733c3c4a1c33d606a"
@@ -72,7 +72,7 @@
     {
       "sku": "NIKE-AM-BLT-41",
       "color": "White",
-      "size": "s",
+      "size": "S",
       "stock": 5,
       "_id": {
         "$oid": "69a79f4733c3c4a1c33d606b"

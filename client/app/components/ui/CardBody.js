@@ -1,14 +1,21 @@
 const CardBody = ({ icon, title, total, style }) => {
   return (
-    <div className="w-full bg-white shadow-md rounded-lg flex items-center justify-center gap-5 overflow-hidden">
-      <div className="p-5 flex items-center justify-center" style={style}>
-        {icon}
+    <article className="w-full rounded-2xl border border-emerald-100 bg-white/90 shadow-sm backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex items-center gap-4 p-4 md:p-5">
+        <div
+          className="h-14 w-14 rounded-xl flex items-center justify-center shadow-sm"
+          style={style || { backgroundColor: "#0f766e" }}
+        >
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold text-slate-500 truncate">
+            {title}
+          </h2>
+          <p className="text-2xl font-bold text-slate-900 truncate">{total}</p>
+        </div>
       </div>
-      <div className="w-full">
-        <h2 className="text-xl font-semibold text-start">{title}</h2>
-        <p className="text-xl font-semibold text-start">{total}</p>
-      </div>
-    </div>
+    </article>
   );
 };
 

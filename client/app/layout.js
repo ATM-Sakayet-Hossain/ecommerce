@@ -9,7 +9,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body suppressHydrationWarning>
+      <body
+        suppressHydrationWarning
+        className="min-h-screen antialiased text-slate-900"
+      >
         <Providers>{children}</Providers>
       </body>
     </html>

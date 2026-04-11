@@ -41,17 +41,17 @@ const ProductDetails = ({ product }) => {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-4">
-          <div className="card border border-blue-400 rounded-xl p-4">
-            <h3 className="mb-4 text-lg font-semibold text-gray-900">Images</h3>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="space-y-4">
+          <div className="border border-blue-400 rounded-xl p-4">
+            {/* <h3 className="mb-4 text-lg font-semibold text-gray-900">Images</h3> */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Image
                 src={product?.thumbnail || "/placeholder.png"}
                 alt={product?.title || "Product"}
                 width={700}
                 height={420}
-                className="h-72 w-full rounded-lg object-cover"
+                className="w-full rounded-lg object-cover"
               />
               <div className="grid grid-cols-2 gap-3">
                 {images.slice(0, 4).map((img, idx) => (
@@ -61,45 +61,11 @@ const ProductDetails = ({ product }) => {
                     alt={`${product?.title || "Product"} ${idx + 1}`}
                     width={220}
                     height={160}
-                    className="h-32 w-full rounded-lg object-cover"
+                    className="w-full rounded-lg object-cover"
                   />
                 ))}
               </div>
             </div>
-          </div>
-
-          <div className="card border border-blue-400 rounded-xl p-4 overflow-x-auto">
-            <h3 className="mb-4 text-lg font-semibold text-gray-900">
-              Variants
-            </h3>
-            <table className="min-w-full text-sm text-left">
-              <thead>
-                <tr className="border-b border-gray-200 text-gray-700">
-                  <th className="px-3 py-2 font-semibold">SKU</th>
-                  <th className="px-3 py-2 font-semibold">Color</th>
-                  <th className="px-3 py-2 font-semibold">Size</th>
-                  <th className="px-3 py-2 font-semibold">Stock</th>
-                </tr>
-              </thead>
-              <tbody>
-                {variants.map((variant, index) => (
-                  <tr
-                    key={
-                      variant?._id?.$oid ||
-                      (typeof variant?._id === "string" ? variant._id : "") ||
-                      variant?.sku ||
-                      `variant-${index}`
-                    }
-                    className="border-b border-gray-100"
-                  >
-                    <td className="px-3 py-2">{variant?.sku || "-"}</td>
-                    <td className="px-3 py-2">{variant?.color || "-"}</td>
-                    <td className="px-3 py-2">{variant?.size || "-"}</td>
-                    <td className="px-3 py-2">{variant?.stock ?? "-"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
 
@@ -136,16 +102,60 @@ const ProductDetails = ({ product }) => {
               </div>
             </div>
           </div>
-
-          <div className="card border border-blue-400 rounded-xl p-4">
-            <h3 className="mb-2 text-lg font-semibold text-gray-900">
-              Description
+          <div className="border border-blue-400 rounded-xl p-4 overflow-x-auto">
+            <h3 className="mb-4 text-lg font-semibold text-gray-900">
+              Variants
             </h3>
-            <p className="text-sm text-gray-600 whitespace-pre-line">
-              {product?.description || "No description available."}
-            </p>
+            <table className="min-w-full text-sm text-left">
+              <thead>
+                <tr className="border-b border-gray-200 text-gray-700">
+                  <th className="px-3 py-1 font-semibold">Color</th>
+                  <th className="px-3 py-1 font-semibold">Size</th>
+                  <th className="px-3 py-1 font-semibold">Price</th>
+                  <th className="px-3 py-1 font-semibold">Stock</th>
+                  <th className="px-3 py-1 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {variants.map((variant, index) => (
+                  <tr
+                    key={
+                      variant?._id?.$oid ||
+                      (typeof variant?._id === "string" ? variant._id : "") ||
+                      variant?.sku ||
+                      `variant-${index}`
+                    }
+                    className="border-b border-gray-100"
+                  >
+                    <td className="px-3 py-1">{variant?.color || "-"}</td>
+                    <td className="px-3 py-1">{variant?.size || "-"}</td>
+                    <td className="px-3 py-1">{variant?.sku || "-"}</td>
+                    <td className="px-3 py-1">{variant?.stock ?? "-"}</td>
+                    <td className="px-6 py-1 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          variant?.stock > 0
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {variant?.stock > 0 ? "In Stock" : "Out of Stock"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
+      </div>
+      <div className="card border border-blue-400 rounded-xl p-4">
+        <h3 className="mb-2 text-lg font-semibold text-gray-900">
+          Description
+        </h3>
+        <p className="text-sm text-gray-600 whitespace-pre-line">
+          {product?.description || "No description available."}
+        </p>
       </div>
     </div>
   );

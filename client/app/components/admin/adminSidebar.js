@@ -13,13 +13,15 @@ const AdminSidebar = () => {
 
   return (
     <nav
-      className={`h-[calc(100vh-2.8rem)] shadow-xl flex flex-col bg-white transition-all duration-300 overflow-hidden ${
+      className={`h-[calc(100vh-4.2rem)] shadow-xl flex flex-col bg-linear-to-b from-slate-900 via-slate-800 to-emerald-900 transition-all duration-300 overflow-hidden rounded-r-2xl border-r border-emerald-700/40 ${
         isExpanded ? "w-64" : "w-0"
       }`}
     >
       <div className="w-64 overflow-y-auto scrollbar-hide">
-        <h2 className="text-black bg-red-700 text-center">-</h2>
-        <ul className="bg-blue-400 scroll-smooth">
+        <h2 className="text-emerald-100 text-sm font-semibold px-4 py-3 border-b border-white/10">
+          Navigation
+        </h2>
+        <ul className="scroll-smooth py-2">
           <MenuItem
             title="Dashboard"
             open={openMenus.Dashboard}
@@ -42,7 +44,7 @@ const AdminSidebar = () => {
             onToggle={() => toggleMenu("Categories")}
             subItems={[
               { title: "Categories", to: "/categories" },
-              { title: "Categories Details", to: "/categories/:slug" },
+              { title: "Categories Details", to: "/categories/:id" },
             ]}
           />
           <MenuItem
@@ -50,8 +52,8 @@ const AdminSidebar = () => {
             open={openMenus.Carts}
             onToggle={() => toggleMenu("Carts")}
             subItems={[
-              { title: "Carts", to: "/carts" },
-              { title: "Cart Details", to: "/carts/:id" },
+              { title: "Carts", to: "/cart" },
+              { title: "Cart Details", to: "/cart/:id" },
             ]}
           />
           <MenuItem
@@ -60,7 +62,7 @@ const AdminSidebar = () => {
             onToggle={() => toggleMenu("Orders")}
             subItems={[
               { title: "Orders", to: "/orders" },
-              { title: "Orders Details", to: "/orders/:id" },
+              { title: "Orders Details", to: "/orders/ORD-1032" },
             ]}
           />
           <MenuItem
@@ -69,7 +71,7 @@ const AdminSidebar = () => {
             onToggle={() => toggleMenu("Payments")}
             subItems={[
               { title: "Payments", to: "/payments" },
-              { title: "Payments Details", to: "/payments/:id" },
+              { title: "Payments Details", to: "/payments/PAY-8892" },
             ]}
           />
           <MenuItem
@@ -78,8 +80,7 @@ const AdminSidebar = () => {
             onToggle={() => toggleMenu("Customers")}
             subItems={[
               { title: "Customers", to: "/customers" },
-              { title: "Customers Details", to: "/customers/:id" },
-              { title: "Customers Details", to: "/customers/:id" },
+              { title: "Customers Details", to: "/customers/CUS-401" },
             ]}
           />
           <MenuItem
@@ -97,7 +98,7 @@ const AdminSidebar = () => {
             onToggle={() => toggleMenu("Banner")}
             subItems={[
               { title: "Banner", to: "/banner" },
-              { title: "Banner Details", to: "/banner/:id" },
+              { title: "Banner Details", to: "/banner/BAN-122" },
             ]}
           />
           <MenuItem
@@ -106,17 +107,16 @@ const AdminSidebar = () => {
             onToggle={() => toggleMenu("Profile")}
             subItems={[
               { title: "Profile", to: "/profile" },
-              { title: "Profile Details", to: "/profile/:id/edit" },
+              { title: "Profile Details", to: "/profile/USR-01/edit" },
             ]}
           />
           <MenuItem
-            title="Review"
-            open={openMenus.Review}
-            onToggle={() => toggleMenu("Review")}
+            title="Reviews"
+            open={openMenus.Reviews}
+            onToggle={() => toggleMenu("Reviews")}
             subItems={[
-              { title: "Add Product", to: "/products/createProduct" },
-              { title: "Edit Product", to: "/products/updateProduct" },
-              { title: "All Products", to: "/products/allProducts" },
+              { title: "Reviews", to: "/reviews" },
+              { title: "Review Details", to: "/reviews/REV-781" },
             ]}
           />
           <MenuItem
@@ -124,13 +124,14 @@ const AdminSidebar = () => {
             open={openMenus.Accounts}
             onToggle={() => toggleMenu("Accounts")}
             subItems={[
-              { title: "Add Product", to: "/products/createProduct" },
-              { title: "Edit Product", to: "/products/updateProduct" },
-              { title: "All Products", to: "/products/allProducts" },
+              { title: "Accounts", to: "/accounts" },
+              { title: "Account Details", to: "/accounts/ACC-311" },
             ]}
           />
         </ul>
-        <h2 className="text-black text-center">-</h2>
+        <h2 className="text-emerald-100/70 text-center text-xs py-3">
+          Admin Panel
+        </h2>
       </div>
     </nav>
   );

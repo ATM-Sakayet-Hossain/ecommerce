@@ -59,7 +59,7 @@ const Dashboard = () => {
     },
   ];
   return (
-    <div className="h-[calc(100vh-5.8rem)] overflow-y-auto scrollbar-hide">
+    <div className="h-[calc(100vh-8rem)] overflow-y-auto scrollbar-hide">
       <div className="grid gap-4">
         <h2>dashboard</h2>
         <div className="grid grid-cols-4 gap-5">
