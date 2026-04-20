@@ -1,113 +1,32 @@
 @import "tailwindcss";
 
-:root {
-  --background: #f4fbf8;
-  --foreground: #0f172a;
-  --surface: #ffffff;
-  --surface-soft: #f8fafc;
-  --border: #dbe7e1;
-  --primary: #0f766e;
-  --primary-strong: #115e59;
-  --danger: #dc2626;
-  --ring: rgba(15, 118, 110, 0.25);
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background:
+      radial-gradient(
+        circle at top left,
+        rgba(16, 185, 129, 0.12),
+        transparent 28%
+      ),
+      radial-gradient(
+        circle at bottom right,
+        rgba(14, 165, 233, 0.1),
+        transparent 30%
+      ),
+      linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  }
+
+  ::selection {
+    background: rgba(16, 185, 129, 0.22);
+    color: #0f172a;
+  }
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  min-height: 100%;
-}
-
-body {
-  background:
-    radial-gradient(
-      1200px 500px at 0% 0%,
-      #d1fae5 0%,
-      rgba(255, 255, 255, 0) 55%
-    ),
-    radial-gradient(
-      1000px 450px at 100% 0%,
-      #cffafe 0%,
-      rgba(255, 255, 255, 0) 55%
-    ),
-    var(--background);
-  color: var(--foreground);
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-@utility container {
-  margin: auto;
-  /* padding-inline: 2rem; */
-}
-
-@utility scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-
-@theme {
-  --color-brand: #e6fff6;
-  --color-primary: #0f766e;
-  --color-secondary: #475569;
-}
-
-.card {
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid var(--border);
-  border-radius: 1rem;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-  padding: 1.25rem;
-}
-
-.input-field {
-  width: 100%;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.75rem;
-  background: #fff;
-  color: #0f172a;
-  padding: 0.625rem 0.875rem;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.input-field:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 4px var(--ring);
-}
-
-.btn-primary {
-  border: 0;
-  border-radius: 0.75rem;
-  background: linear-gradient(135deg, var(--primary), #0284c7);
-  color: #fff;
-  font-weight: 600;
-  padding: 0.625rem 1rem;
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.2s ease,
-    filter 0.2s ease;
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  filter: brightness(0.98);
-  box-shadow: 0 10px 20px rgba(2, 132, 199, 0.28);
-}
-
-.btn-primary:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
+.scrollbar-hidden {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }

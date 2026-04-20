@@ -13,7 +13,12 @@ const { webhook } = require("./controllers/orderController");
 app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())
 require("dotenv").config();
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  }),
+);
 dbConfig();
 cloudinaryConfig()
 app.post("/webhook", express.raw({ type: 'application/json' }), webhook)

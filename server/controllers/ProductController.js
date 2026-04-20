@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+const slugify = require("slugify");
 const categorySchema = require("../models/categorySchema");
 const productSchema = require("../models/productSchema");
 const {
@@ -5,13 +7,14 @@ const {
   deleteFromCloudinary,
 } = require("../services/cloudinaryService");
 const { getPagination } = require("../services/helper");
-const { responseHandler } = require("../utils/responseHandler");
+const { responseHandler } = require("../Utils/responseHandler");
 const SIZE_ENUM = ["s", "m", "l", "xl", "2xl", "3xl"];
 
 const createProduct = async (req, res) => {
   try {
     const {
       title,
+      slug: submittedSlug,
       description,
       category,
       price,
@@ -26,23 +29,26 @@ const createProduct = async (req, res) => {
     const images = req.files?.images || [];
     if (!title)
       return responseHandler.error(res, 400, "Product title is required");
-    const slug = slugify(title, { lower: true, strict: true });
+    const slug = submittedSlug?.trim()
+      ? slugify(submittedSlug, { lower: true, strict: true })
+      : slugify(title, { lower: true, strict: true });
     const existslug = await productSchema.findOne({ slug: slug.toLowerCase() });
     if (existslug) return responseHandler.error(res, 400, "slug already Exist");
     if (!description)
       return responseHandler.error(res, 400, "Product description is required");
     if (!category)
       return responseHandler.error(res, 400, "Product category is required");
-    const categoryName =
-      typeof category === "string" ? category : category.name;
-    const isCategoryExist = await categorySchema.findOne({
-      name: categoryName,
-    });
+    const categoryQuery = mongoose.Types.ObjectId.isValid(category)
+      ? { _id: category }
+      : { name: category };
+    const isCategoryExist = await categorySchema.findOne(categoryQuery);
     if (!isCategoryExist)
       return responseHandler.error(res, 400, "Invalid category");
     if (!price)
       return responseHandler.error(res, 400, "Product price is required");
-    const variatData = JSON.parse(variants);
+    const variatData = Array.isArray(variants)
+      ? variants
+      : JSON.parse(variants || "[]");
     if (!Array.isArray(variatData) || variatData.length === 0)
       return responseHandler.error(res, 400, "Minimum 1 variant is required.");
     for (const variant of variatData) {
@@ -54,9 +60,14 @@ const createProduct = async (req, res) => {
         return responseHandler.error(res, 400, "Product size is required");
       if (!SIZE_ENUM.includes(variant.size))
         return responseHandler.error(res, 400, "Invalid size");
-      if (!variant.stock || variant.stock < 0)
-        return responseHandler(
+      if (
+        variant.stock === undefined ||
+        variant.stock === null ||
+        Number(variant.stock) < 0
+      )
+        return responseHandler.error(
           res,
+          400,
           "Product stock is required and must be more than 0",
         );
     }
@@ -68,9 +79,32 @@ const createProduct = async (req, res) => {
     if (images && images.length > 4)
       return responseHandler.error(res, 400, "You can upload images max 4");
     const thumbnailUrl = await uploadToCloudinary(thumbnail, "products");
+    const parsedTags = Array.isArray(tags)
+      ? tags
+      : typeof tags === "string" && tags.trim()
+        ? (() => {
+            try {
+              const decodedTags = JSON.parse(tags);
+              return Array.isArray(decodedTags)
+                ? decodedTags
+                : tags.split(",").map((tag) => tag.trim()).filter(Boolean);
+            } catch {
+              return tags.split(",").map((tag) => tag.trim()).filter(Boolean);
+            }
+          })()
+        : [];
+    const parsedIsActive =
+      isActive === undefined ? true : isActive === true || isActive === "true";
+    const parsedDiscountPrice = Number(discountPrice || 0);
+    const parsedDiscountPercentage = Number(discountPercentage || 0);
+    const parsedPrice = Number(price);
+    const normalizedVariants = variatData.map((variant) => ({
+      ...variant,
+      stock: Number(variant.stock),
+    }));
     let imagesUrl = [];
     if (images) {
-      const resPromise = images.map(async (i) =>
+      const resPromise = images.map(async (images) =>
         uploadToCloudinary(images, "products"),
       );
       const result = await Promise.all(resPromise);
@@ -85,15 +119,15 @@ const createProduct = async (req, res) => {
       slug: slug.toLowerCase(),
       description,
       category: isCategoryExist._id,
-      price,
-      discountPercentage,
-      variants: variatData,
+      price: parsedPrice,
+      discountPercentage: parsedDiscountPercentage,
+      variants: normalizedVariants,
       thumbnail: thumbnailUrl.secure_url,
       images: imagesUrl,
-      tags,
+      tags: parsedTags,
       brand,
-      discountPrice,
-      isActive,
+      discountPrice: parsedDiscountPrice,
+      isActive: parsedIsActive,
       createdBy: req.user?._id,
       updatedBy: req.user?._id,
     });
@@ -115,9 +149,16 @@ const createProduct = async (req, res) => {
 const getAllProduct = async (req, res) => {
   try {
     const { page, limit, skip } = getPagination(req);
-    const { category, search, minPrice, maxPrice, sortBy = "createdAt", order = "desc", } = req.query;
+    const {
+      category,
+      search,
+      minPrice,
+      maxPrice,
+      sortBy = "createdAt",
+      order = "desc",
+    } = req.query;
     const userRole = req.user?.role;
-    const isAdmin = ["admin", "editor"].includes(userRole)
+    const isAdmin = ["admin", "editor"].includes(userRole);
     const andConditions = [];
     if (!isAdmin) {
       andConditions.push({ isActive: true });
@@ -131,13 +172,14 @@ const getAllProduct = async (req, res) => {
         ],
       });
     }
-    if (minPrice || maxPrice) {
+    if (minPrice != null || maxPrice != null) {
       const priceFilter = {};
-      if (minPrice) priceFilter.$gte = Number(minPrice);
-      if (maxPrice) priceFilter.$lte = Number(maxPrice);
+      if (minPrice != null) priceFilter.$gte = Number(minPrice);
+      if (maxPrice != null) priceFilter.$lte = Number(maxPrice);
       andConditions.push({ price: priceFilter });
     }
-    const matchproduct = andConditions.length > 0 ? { $and: andConditions } : {};
+    const matchproduct =
+      andConditions.length > 0 ? { $and: andConditions } : {};
     const sortOrder = order === "asc" ? 1 : -1;
     const pipeline = [
       {
@@ -148,24 +190,25 @@ const getAllProduct = async (req, res) => {
           from: "categories",
           localField: "category",
           foreignField: "_id",
-          as: "category",
+          as: "categoryData",
         },
       },
       {
         $unwind: {
-          path: "$category",
+          path: "$categoryData",
           preserveNullAndEmptyArrays: true,
         },
       },
-      ...(category
-        ? [
-            {
-              $match: {
-                "category.slug": category,
-              },
-            },
-          ]
-        : []),
+      
+    ];
+    if(category) {
+      pipeline.push({
+        $match:{
+          "categoryData._id": new mongoose.Types.ObjectId(category)
+        }
+      })
+    }
+    pipeline.push(
       { $sort: { [sortBy]: sortOrder } },
       {
         $facet: {
@@ -173,7 +216,7 @@ const getAllProduct = async (req, res) => {
           totalCount: [{ $count: "count" }],
         },
       },
-    ];
+    )
     const result = await productSchema.aggregate(pipeline);
     const productList = result[0]?.data || [];
     const total = result[0]?.totalCount[0]?.count || 0;
