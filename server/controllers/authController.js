@@ -40,12 +40,12 @@ const registration = async (req, res) => {
         400,
         "Please provide and confirm your new password.",
       );
-    if (!isStrongPassword(password))
-      return responseHandler.error(
-        res,
-        400,
-        "Password must be at least 6 characters long",
-      );
+    // if (!isStrongPassword(password))
+    //   return responseHandler.error(
+    //     res,
+    //     400,
+    //     "Password must be at least 6 characters long",
+    //   );
     const existingUser = await userSchema.findOne({ email });
     if (existingUser)
       return responseHandler.error(res, 401, "Email is already registered");
@@ -70,6 +70,7 @@ const registration = async (req, res) => {
     responseHandler.success(
       res,
       201,
+      user,
       "User signed up successfully, Please verify your email before logging in.",
     );
   } catch (error) {
@@ -112,7 +113,7 @@ const resendOTP = async (req, res) => {
     if (!email) return responseHandler.error(res, 400, "Email is required");
     const user = await userSchema.findOne({ email, isVerified: false });
     if (!user) return responseHandler.error(res, 400, "Unauthorized Request");
-    if (user.otpExpires && user.otpExpires > Date.now() - 60000) {
+    if (user.otpExpires && user.otpExpires > Date.now()) {
       return responseHandler.error(
         res,
         429,
@@ -122,7 +123,7 @@ const resendOTP = async (req, res) => {
     const otp = generateOTP();
     user.otp = otp;
     user.otpExpires = Date.now() + 2 * 60 * 1000;
-    user.save();
+    await user.save();
     sendEmail({
       email,
       subject: "Email Varification",
@@ -130,7 +131,7 @@ const resendOTP = async (req, res) => {
       templete: emailVerifyTem,
       fullName: user.fullName,
     });
-    responseHandler.success(res, 200, "OTP send you mail successfully");
+    responseHandler.success(res, 200, user, "OTP send you mail successfully");
   } catch (error) {
     responseHandler.error(
       res,
@@ -231,10 +232,10 @@ const forgetPass = async (req, res) => {
     const { resetToken, hashedToken } = generateResetPassToken();
     existingUser.resetPassToken = hashedToken;
     existingUser.resetExpires = Date.now() + 5 * 60 * 1000;
-    existingUser.save();
+    await existingUser.save();
     const resetPasswordLink = `${
       process.env.CLIENT_URL || "http://localhost:3000"
-    }/auth/resetPass?sec=${resetToken}`;
+    }/resetPassword?sec=${resetToken}`;
     sendEmail({
       email,
       subject: "Reset Your Password",

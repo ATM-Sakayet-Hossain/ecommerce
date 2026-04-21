@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const adminApiService = createApi({
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:1993",
+    baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
     credentials: "include",
   }),
   endpoints: (build) => ({
@@ -10,7 +10,14 @@ export const adminApiService = createApi({
       query: () => "/category/get",
     }),
     getProducts: build.query({
-      query: ({ page = 1, limit = 10, search, sortBy, order, isActive } = {}) => ({
+      query: ({
+        page = 1,
+        limit = 10,
+        search,
+        sortBy,
+        order,
+        isActive,
+      } = {}) => ({
         url: "/product/admin/get",
         params: { page, limit, search, sortBy, order, isActive },
       }),

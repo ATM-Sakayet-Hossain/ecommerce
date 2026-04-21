@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-require('dotenv').config();
+require("dotenv").config();
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -11,12 +11,19 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendEmail = async ({ email, subject, otp, templete, fullName }) => {
+const sendEmail = async ({
+  email,
+  subject,
+  otp,
+  generatedOtp,
+  templete,
+  fullName,
+}) => {
   await transporter.sendMail({
-    from: '"E-Commerce" <process.env.MAIL_USERNAME>',
+    from: `"E-Commerce" <${process.env.MAIL_USERNAME}>`,
     to: email,
     subject: subject,
-    html: templete({otp, fullName}) // HTML version of the message
+    html: templete({ otp: generatedOtp || otp, fullName }), // HTML version of the message
   });
 };
 

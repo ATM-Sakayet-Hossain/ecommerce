@@ -1,10 +1,69 @@
+"use client";
 import Button from "@/components/UI/Button";
 import Input from "@/components/UI/Input";
 import Link from "next/link";
-
-export const metadata = { title: "Login" };
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [errorMessage, setErrorMessage] = useState("");
+  const [message, setMessage] = useState("");
+  const [errors, setErrors] = useState("");
+  const [userData, setUserData] = useState({
+    email: "",
+    password: "",
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(
+        process.env.NEXT_PUBLIC_BASE_URL + "/auth/login",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(userData),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMessage(data?.message || "login failed");
+        return;
+      }
+      setErrorMessage("");
+      setMessage(data?.message);
+      setTimeout(() => {
+        router.push("/");
+      });
+    } catch (error) {
+      setErrorMessage("Something went wrong. Please try again.");
+    }
+  };
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    if (!value) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: `${name} is required`,
+      }));
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setUserData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    setErrors((prev) => ({
+      ...prev,
+      [name]: "",
+    }));
+    setErrorMessage("");
+  };
   return (
     <main className="min-h-screen flex items-center justify-center bg-white px-4">
       <div className="relative overflow-hidden w-[850px] max-w-full min-h-[550px] rounded-[20px] border border-black/5 shadow-[0_8px_32px_0_rgba(31,38,135,0.20)]">
@@ -40,21 +99,34 @@ export default function LoginPage() {
             <span className="text-xs text-gray-500 mb-2">
               or use your account
             </span>
-
-            <form className="w-full flex flex-col items-center justify-center space-y-2 ">
+            {errorMessage ? (
+              <p className="pt-1 text-sm text-red-600">{errorMessage}</p>
+            ) : null}
+            {errors.email ? (
+              <p className="pt-1 text-sm text-red-600">{errors.email}</p>
+            ) : null}
+            <form
+              onSubmit={handleSubmit}
+              className="w-full flex flex-col items-center justify-center space-y-2 "
+            >
               <Input
                 placeholder="Email"
                 type="email"
                 name="email"
-                // value={formData.slug}
-                // onChange={handleChange}
+                value={userData.email}
+                onChange={handleChange}
+                onBlur={handleBlur}
               />
+              {errors.password ? (
+                <p className="pt-1 text-sm text-red-600">{errors.password}</p>
+              ) : null}
               <Input
                 placeholder="Password"
                 type="password"
                 name="password"
-                // value={formData.slug}
-                // onChange={handleChange}
+                value={userData.password}
+                onChange={handleChange}
+                onBlur={handleBlur}
               />
               <Link
                 className="text-sm text-gray-700 hover:text-blue-600"
