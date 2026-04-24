@@ -36,6 +36,8 @@ const AdminHeader = ({ isSidebarExpanded, onToggleSidebar }) => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      document.cookie = "X-AS-Token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+      document.cookie = "X-RF-Token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
     }
     router.push("/login");
   };

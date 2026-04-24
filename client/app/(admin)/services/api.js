@@ -14,12 +14,13 @@ export const adminApiService = createApi({
         page = 1,
         limit = 10,
         search,
+        category,
         sortBy,
         order,
         isActive,
       } = {}) => ({
         url: "/product/admin/get",
-        params: { page, limit, search, sortBy, order, isActive },
+        params: { page, limit, search, category, sortBy, order, isActive },
       }),
     }),
     createProduct: build.mutation({

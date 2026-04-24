@@ -87,9 +87,15 @@ const createProduct = async (req, res) => {
               const decodedTags = JSON.parse(tags);
               return Array.isArray(decodedTags)
                 ? decodedTags
-                : tags.split(",").map((tag) => tag.trim()).filter(Boolean);
+                : tags
+                    .split(",")
+                    .map((tag) => tag.trim())
+                    .filter(Boolean);
             } catch {
-              return tags.split(",").map((tag) => tag.trim()).filter(Boolean);
+              return tags
+                .split(",")
+                .map((tag) => tag.trim())
+                .filter(Boolean);
             }
           })()
         : [];
@@ -156,12 +162,22 @@ const getAllProduct = async (req, res) => {
       maxPrice,
       sortBy = "createdAt",
       order = "desc",
+      isActive,
     } = req.query;
     const userRole = req.user?.role;
     const isAdmin = ["admin", "editor"].includes(userRole);
     const andConditions = [];
     if (!isAdmin) {
       andConditions.push({ isActive: true });
+    }
+    const parsedIsActive =
+      isActive === "true" || isActive === true
+        ? true
+        : isActive === "false" || isActive === false
+          ? false
+          : undefined;
+    if (isAdmin && parsedIsActive !== undefined) {
+      andConditions.push({ isActive: parsedIsActive });
     }
     if (search) {
       andConditions.push({
@@ -199,14 +215,13 @@ const getAllProduct = async (req, res) => {
           preserveNullAndEmptyArrays: true,
         },
       },
-      
     ];
-    if(category) {
+    if (category && mongoose.Types.ObjectId.isValid(category)) {
       pipeline.push({
-        $match:{
-          "categoryData._id": new mongoose.Types.ObjectId(category)
-        }
-      })
+        $match: {
+          "categoryData._id": new mongoose.Types.ObjectId(category),
+        },
+      });
     }
     pipeline.push(
       { $sort: { [sortBy]: sortOrder } },
@@ -216,7 +231,7 @@ const getAllProduct = async (req, res) => {
           totalCount: [{ $count: "count" }],
         },
       },
-    )
+    );
     const result = await productSchema.aggregate(pipeline);
     const productList = result[0]?.data || [];
     const total = result[0]?.totalCount[0]?.count || 0;

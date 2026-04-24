@@ -1,23 +1,69 @@
 "use client";
-import Link from 'next/link';
-import React, { useState } from 'react'
-import PageContainer from './PageContainer';
-import { LuSearch, LuShoppingCart, LuUser } from 'react-icons/lu';
-import { FiAlignJustify, FiX } from 'react-icons/fi';
-import { usePathname } from 'next/navigation';
+import Link from "next/link";
+import React, { useEffect, useState } from "react";
+import PageContainer from "./PageContainer";
+import { LuSearch, LuShoppingCart, LuUser } from "react-icons/lu";
+import { FiAlignJustify, FiX } from "react-icons/fi";
+import { usePathname } from "next/navigation";
+import { decodeJwt } from "jose";
 
-const navLinks = [
+const baseNavLinks = [
   { label: "Home", href: "/" },
   { label: "Shop", href: "/shop" },
   { label: "Categories", href: "/categories" },
-  { label: "Dashboard", href: "/dashboard" },
 ];
 
-const Navbar = () => {
-    const pathname = usePathname();
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
+const authCookieName = "X-AS-Token";
 
-     const isActivePath = (href) => {
+const getCookieValue = (name) => {
+  if (typeof document === "undefined") {
+    return "";
+  }
+
+  const cookie = document.cookie
+    .split("; ")
+    .find((item) => item.startsWith(`${name}=`));
+
+  return cookie ? cookie.slice(name.length + 1) : "";
+};
+
+const Navbar = () => {
+  const pathname = usePathname();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [authState, setAuthState] = useState({
+    isLoggedIn: false,
+    isAdmin: false,
+  });
+
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(() => {
+      const token = getCookieValue(authCookieName);
+
+      if (!token) {
+        setAuthState({ isLoggedIn: false, isAdmin: false });
+        return;
+      }
+
+      try {
+        const decodedToken = decodeJwt(token);
+
+        setAuthState({
+          isLoggedIn: true,
+          isAdmin: decodedToken.role === "admin",
+        });
+      } catch {
+        setAuthState({ isLoggedIn: false, isAdmin: false });
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [pathname]);
+
+  const navLinks = authState.isAdmin
+    ? [...baseNavLinks, { label: "Dashboard", href: "/admin/dashboard" }]
+    : baseNavLinks;
+
+  const isActivePath = (href) => {
     if (href === "/") {
       return pathname === "/";
     }
@@ -30,7 +76,11 @@ const Navbar = () => {
     <header className="sticky top-0 z-50 border-b border-emerald-100/80 bg-linear-to-r from-emerald-50 via-white to-cyan-50 backdrop-blur-xl shadow-[0_1px_0_rgba(15,23,42,0.04)]">
       <PageContainer className="py-3 sm:py-4">
         <div className="flex items-center justify-between gap-4 lg:gap-6">
-          <Link href="/" className="flex shrink-0 items-center gap-2 group" onClick={closeMenu}>
+          <Link
+            href="/"
+            className="flex shrink-0 items-center gap-2 group"
+            onClick={closeMenu}
+          >
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-emerald-500 via-teal-500 to-cyan-500 shadow-md transition-transform duration-200 group-hover:scale-105">
               <span className="text-sm font-bold text-white">S</span>
             </div>
@@ -43,11 +93,11 @@ const Navbar = () => {
             <div className="flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 pl-4 transition-all focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-emerald-100">
               <LuSearch size={18} className="shrink-0 text-slate-400" />
               <input
-                  type="search"
-                  name="query"
-                  placeholder="Search products, brands, categories"
-                  className="h-full w-full border-0 bg-transparent px-1 text-sm outline-none placeholder:text-slate-400"
-                />
+                type="search"
+                name="query"
+                placeholder="Search products, brands, categories"
+                className="h-full w-full border-0 bg-transparent px-1 text-sm outline-none placeholder:text-slate-400"
+              />
               <button
                 type="submit"
                 className="h-11 rounded-r-2xl bg-linear-to-br from-emerald-500 via-teal-500 px-5 to-cyan-500 text-sm font-semibold text-white transition-colors hover:bg-emerald-600"
@@ -78,7 +128,7 @@ const Navbar = () => {
           </nav>
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
-                  href="/cart"
+              href="/cart"
               className="relative hidden sm:inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 hover:text-emerald-600"
               title="Shopping Cart"
             >
@@ -87,19 +137,21 @@ const Navbar = () => {
             </Link>
 
             <Link
-                  href="/dashboard"
+              href="/profile"
               className="hidden sm:inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 hover:text-emerald-600"
               title="Account"
             >
               <LuUser size={20} />
             </Link>
 
-            <Link
-                  href="/login"
-              className="hidden sm:inline-flex items-center justify-center rounded-xl bg-linear-to-br from-emerald-500 via-teal-500 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-600"
-            >
-              Sign In
-            </Link>
+            {!authState.isLoggedIn ? (
+              <Link
+                href="/login"
+                className="hidden sm:inline-flex items-center justify-center rounded-xl bg-linear-to-br from-emerald-500 via-teal-500 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-600"
+              >
+                Sign In
+              </Link>
+            ) : null}
 
             <button
               type="button"
@@ -115,7 +167,10 @@ const Navbar = () => {
         </div>
 
         {isMenuOpen ? (
-          <div id="mobile-navigation" className="mt-3 space-y-4 border-t border-slate-200 pt-4 lg:hidden">
+          <div
+            id="mobile-navigation"
+            className="mt-3 space-y-4 border-t border-slate-200 pt-4 lg:hidden"
+          >
             <form action="/shop" className="w-full">
               <div className="flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-emerald-100">
                 <LuSearch size={18} className="shrink-0 text-slate-400" />
@@ -158,26 +213,28 @@ const Navbar = () => {
                 Cart
               </Link>
               <Link
-                href="/dashboard"
+                href="/profile"
                 onClick={closeMenu}
                 className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-emerald-200 hover:text-emerald-600"
               >
                 <LuUser size={18} />
                 Account
               </Link>
-              <Link
-                href="/dashboard"
-                onClick={closeMenu}
-                className="col-span-2 flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-600 sm:col-span-1"
-              >
-                Sign In
-              </Link>
+              {!authState.isLoggedIn ? (
+                <Link
+                  href="/login"
+                  onClick={closeMenu}
+                  className="col-span-2 flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-600 sm:col-span-1"
+                >
+                  Sign In
+                </Link>
+              ) : null}
             </div>
           </div>
         ) : null}
       </PageContainer>
     </header>
-  )
-}
+  );
+};
 
-export default Navbar
+export default Navbar;

@@ -1,19 +1,33 @@
 "use client";
-import { useGetProductsQuery } from "@/app/(admin)/services/api";
+import {
+  useGetCategoriesQuery,
+  useGetProductsQuery,
+} from "@/app/(admin)/services/api";
 import Input from "@/components/UI/Input";
 import Select from "@/components/UI/Select";
 import { Edit, Eye, Plus, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 
 const Page = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("createdAt");
-  const [order, setOrder] = useState("desc");
+  const [order, setOrder] = useState("");
+  const { data: categoryResponse } = useGetCategoriesQuery();
+  const categories = useMemo(
+    () =>
+      categoryResponse?.data?.categories || categoryResponse?.categories || [],
+    [categoryResponse],
+  );
+  const isActiveFilter =
+    statusFilter === "all" ? undefined : statusFilter === "true";
+  const categoryIdFilter =
+    categoryFilter === "all" ? undefined : categoryFilter;
   const {
     data: products,
     isLoading,
@@ -22,9 +36,10 @@ const Page = () => {
     page: currentPage,
     limit: pageSize,
     search: searchTerm || undefined,
+    category: categoryIdFilter,
     sortBy,
     order,
-    isActive: statusFilter === "all" ? undefined : statusFilter,
+    isActive: isActiveFilter,
   });
 
   const productList = products?.data?.product ?? [];
@@ -45,16 +60,37 @@ const Page = () => {
     }
   };
 
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setCategoryFilter("all");
+    setStatusFilter("all");
+    setSortBy("createdAt");
+    setOrder("");
+    setPageSize(10);
+    setCurrentPage(1);
+  };
+
   return (
     <>
-      <div className="space-y-6 p-4 bg-green-50 rounded-xl">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-          <p className="text-gray-600">Manage your Product catalog</p>
+      <div className="space-y-6 rounded-xl bg-green-50 p-4">
+        <div className="flex justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Products</h1>
+            <p className="text-gray-600">Manage your product catalog</p>
+          </div>
+          <Link
+            href="/admin/products/createProduct"
+            className="sm:col-span-2 xl:col-span-1"
+          >
+            <span className="inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-linear-to-r from-emerald-600 to-cyan-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:from-emerald-700 hover:to-cyan-700 hover:shadow-md">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Product
+            </span>
+          </Link>
         </div>
         {/* Filters */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-6">
-          <div className="relative">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-8">
+          <div className="relative sm:col-span-2 xl:col-span-2">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               type="text"
@@ -67,6 +103,21 @@ const Page = () => {
               className="pl-10"
             />
           </div>
+
+          <Select
+            value={categoryFilter}
+            onChange={(event) => {
+              setCategoryFilter(event.target.value);
+              setCurrentPage(1);
+            }}
+            options={categories.map((category) => ({
+              label: category?.name || "Unnamed category",
+              value: String(category?._id || ""),
+            }))}
+            placeholder="All Categories"
+            className="sm:col-span-1"
+          />
+
           <Select
             value={statusFilter}
             onChange={(event) => {
@@ -79,7 +130,9 @@ const Page = () => {
               { label: "Inactive", value: "false" },
             ]}
             placeholder="All Status"
+            className="sm:col-span-1"
           />
+
           <Select
             value={sortBy}
             onChange={(event) => {
@@ -93,7 +146,9 @@ const Page = () => {
               { label: "Sort: Price", value: "price" },
             ]}
             placeholder="Sort"
+            className="sm:col-span-1"
           />
+
           <Select
             value={order}
             onChange={(event) => {
@@ -105,7 +160,9 @@ const Page = () => {
               { label: "Order: Desc", value: "desc" },
             ]}
             placeholder="Order"
+            className="sm:col-span-1"
           />
+
           <Select
             value={String(pageSize)}
             onChange={(event) => {
@@ -120,14 +177,15 @@ const Page = () => {
               { label: "100 / page", value: "100" },
             ]}
             placeholder="Page Size"
+            className="sm:col-span-1"
           />
-
-          <Link href="/admin/products/createProduct">
-            <span className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-linear-to-r from-emerald-600 to-cyan-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:from-emerald-700 hover:to-cyan-700 hover:shadow-md">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Product
-            </span>
-          </Link>
+          <button
+            type="button"
+            onClick={handleResetFilters}
+            className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 sm:col-span-1"
+          >
+            Reset
+          </button>
         </div>
 
         {/* ptoducts list */}
@@ -151,13 +209,13 @@ const Page = () => {
                     Title
                   </th>
                   <th className="px-4 py-3 font-semibold border-r border-blue-400">
-                    Categoris
+                    Category
                   </th>
                   <th className="px-4 py-3 font-semibold border-r border-blue-400">
                     Price
                   </th>
                   <th className="px-4 py-3 font-semibold border-r border-blue-400">
-                    stock
+                    Stock
                   </th>
                   <th className="px-4 py-3 font-semibold border-r border-blue-400">
                     Status
@@ -198,8 +256,13 @@ const Page = () => {
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3">
-                          {product?.title || "Untitled"}
+                        <td className="px-4 py-3 flex flex-col">
+                          <p className="font-bold text-xl">
+                            {product?.title || "Untitled"}
+                          </p>
+                          <p className="text-base">
+                            {product?.slug || "Untitled"}
+                          </p>
                         </td>
                         <td className="px-4 py-3">{categoryName}</td>
                         <td className="px-4 py-3">
