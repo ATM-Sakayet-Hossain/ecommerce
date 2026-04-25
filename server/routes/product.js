@@ -23,6 +23,12 @@ route.post(
   createProduct,
 );
 route.get("/admin/get",authMiddleWare, roleCheckMiddleware("admin", "editor"), getAllProduct);
+route.get(
+  "/admin/:slug",
+  authMiddleWare,
+  roleCheckMiddleware("admin", "editor"),
+  getProductDetails,
+);
 route.get("/get", getAllProduct);
 route.get("/:slug", getProductDetails);
 route.put(

@@ -281,13 +281,13 @@ const Page = () => {
                               <Eye className="h-3.5 w-3.5" />
                               View
                             </button>
-                            <button
-                              type="button"
+                            <Link
+                              href={`/admin/products/${product?.slug}`}
                               className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs hover:bg-gray-100"
                             >
                               <Edit className="h-3.5 w-3.5" />
                               Edit
-                            </button>
+                            </Link>
                           </div>
                         </td>
                       </tr>

@@ -257,8 +257,12 @@ const getAllProduct = async (req, res) => {
 const getProductDetails = async (req, res) => {
   try {
     const { slug } = req.params;
+    const isAdminRequest = ["admin", "editor"].includes(req.user?.role);
+    const query = isAdminRequest
+      ? { slug: slug.toLowerCase() }
+      : { slug: slug.toLowerCase(), isActive: true };
     const productDetails = await productSchema
-      .findOne({ slug, isActive: true })
+      .findOne(query)
       .populate("category", "name")
       .select("-isActive -updatedAt -__v");
     if (!productDetails)
@@ -281,9 +285,12 @@ const updateProduct = async (req, res) => {
   try {
     const {
       title,
+      slug: submittedSlug,
       description,
       category,
+      brand,
       price,
+      discountPrice,
       discountPercentage,
       variants,
       tags,
@@ -296,14 +303,51 @@ const updateProduct = async (req, res) => {
     const productData = await productSchema.findOne({
       slug: slug.toLowerCase(),
     });
+    if (!productData)
+      return responseHandler.error(res, 404, "Product not found");
+    const nextSlug = submittedSlug?.trim()
+      ? slugify(submittedSlug, { lower: true, strict: true })
+      : productData.slug;
+    if (nextSlug !== productData.slug) {
+      const existingProduct = await productSchema.findOne({ slug: nextSlug });
+      if (existingProduct)
+        return responseHandler.error(res, 400, "slug already Exist");
+      productData.slug = nextSlug;
+    }
     if (title) productData.title = title;
     if (description) productData.description = description;
     if (category) productData.category = category;
+    if (brand !== undefined) productData.brand = brand;
     if (price) productData.price = price;
-    if (Array.isArray(tags)) productData.tags = tags;
-    if (discountPercentage) productData.discountPercentage = discountPercentage;
-    if (isActive) productData.isActive = isActive;
-    const variantData = variants && JSON.parse(variants);
+    if (discountPrice !== undefined)
+      productData.discountPrice = Number(discountPrice || 0);
+    if (discountPercentage !== undefined)
+      productData.discountPercentage = Number(discountPercentage || 0);
+    if (isActive !== undefined)
+      productData.isActive = isActive === true || isActive === "true";
+    const parsedTags = Array.isArray(tags)
+      ? tags
+      : typeof tags === "string" && tags.trim()
+        ? (() => {
+            try {
+              const decodedTags = JSON.parse(tags);
+              return Array.isArray(decodedTags)
+                ? decodedTags
+                : tags
+                    .split(",")
+                    .map((tag) => tag.trim())
+                    .filter(Boolean);
+            } catch {
+              return tags
+                .split(",")
+                .map((tag) => tag.trim())
+                .filter(Boolean);
+            }
+          })()
+        : [];
+    if (parsedTags) productData.tags = parsedTags;
+    const variantData =
+      typeof variants === "string" ? JSON.parse(variants) : variants;
     if (Array.isArray(variantData) && variantData.length > 0) {
       for (const variant of variantData) {
         if (!variant.sku)
@@ -314,9 +358,10 @@ const updateProduct = async (req, res) => {
           return responseHandler.error(res, 400, "Size is required");
         if (!SIZE_ENUM.includes(variant.size))
           return responseHandler.error(res, 400, "Incalid Size");
-        if (!variant.stock || variant.stock < 1)
-          return responseHandler(
+        if (Number(variant.stock) < 0)
+          return responseHandler.error(
             res,
+            400,
             "Stock is required and must be more then 0",
           );
       }
@@ -333,7 +378,12 @@ const updateProduct = async (req, res) => {
     }
     let imagesUrl = [];
     let totalImges = productData.images.length;
-    if (destroyImages.length > 0) totalImges -= destroyImages.length;
+    const parsedDestroyImages = Array.isArray(destroyImages)
+      ? destroyImages
+      : typeof destroyImages === "string" && destroyImages.trim()
+        ? JSON.parse(destroyImages)
+        : [];
+    if (parsedDestroyImages.length > 0) totalImges -= parsedDestroyImages.length;
     if (Array.isArray(images) && images.length > 0) totalImges += images.length;
     if (totalImges > 4)
       return responseHandler.error(res, 400, "You can upload maximum 4 images");
@@ -346,9 +396,9 @@ const updateProduct = async (req, res) => {
       const results = await Promise.all(resPromise);
       imagesUrl = results.map((r) => r.secure_url);
     }
-    if (Array.isArray(destroyImages) && destroyImages.length > 0) {
-      for (const url of destroyImages) {
-        const imgPublicId = productData.thumbnail
+    if (Array.isArray(parsedDestroyImages) && parsedDestroyImages.length > 0) {
+      for (const url of parsedDestroyImages) {
+        const imgPublicId = String(url)
           .split("/")
           .pop()
           .split(".")[0];
@@ -356,11 +406,11 @@ const updateProduct = async (req, res) => {
       }
     }
     let filterImage = productData.images.filter((i) => {
-      return !destroyImages.includes(i);
+      return !parsedDestroyImages.includes(i);
     });
     imagesUrl = imagesUrl.concat(filterImage);
     if (imagesUrl.length > 0) productData.images = imagesUrl;
-    productData.save();
+    await productData.save();
     responseHandler.success(
       res,
       200,

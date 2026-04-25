@@ -31,11 +31,14 @@ export const adminApiService = createApi({
       }),
     }),
     updateProduct: build.mutation({
-      query: (body) => ({
-        url: "/product/update/:slug",
+      query: ({ slug, body }) => ({
+        url: `/product/update/${slug}`,
         method: "PUT",
         body,
       }),
+    }),
+    getProductBySlug: build.query({
+      query: (slug) => `/product/admin/${slug}`,
     }),
   }),
 });
@@ -44,4 +47,6 @@ export const {
   useGetProductsQuery,
   useGetCategoriesQuery,
   useCreateProductMutation,
+  useUpdateProductMutation,
+  useGetProductBySlugQuery,
 } = adminApiService;
