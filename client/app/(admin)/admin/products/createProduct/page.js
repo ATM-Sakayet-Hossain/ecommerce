@@ -192,8 +192,8 @@ const Page = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-2 lg:col-span-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="space-y-2">
           <BasicInfo
             formData={formData}
             setFormData={setFormData}

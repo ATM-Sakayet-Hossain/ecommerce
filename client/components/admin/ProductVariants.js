@@ -63,16 +63,16 @@ const ProductVariants = ({ variants = [], setVariants = () => {} }) => {
           </Button>
         </div>
       </div>
-      <div className="h-[calc(100vh-22rem)] overflow-y-auto scrollbar-hide pt-3">
+      <div className="h-[calc(100vh-18rem)] overflow-y-auto scrollbar-hide pt-3">
         {variants.map((v, i) => (
           <div
             key={i}
-            className="border border-blue-400 p-2 rounded-lg mb-4 grid grid-cols-4 gap- relative"
+            className="border border-blue-400 p-2 rounded-lg mb-4 grid grid-cols-5 gap-2 relative"
           >
             <button
               type="button"
               onClick={() => removeVariant(i)}
-              className="absolute -top-3.5 right-2 bg-white rounded-full shadow-md text-red-500 hover:scale-110 transition"
+              className="absolute -top-3.5 right-0 bg-white rounded-full shadow-md text-red-500 hover:scale-110 transition"
               aria-label="Remove variant"
             >
               <IoRemoveCircleSharp size={26} />
@@ -100,12 +100,21 @@ const ProductVariants = ({ variants = [], setVariants = () => {} }) => {
               onChange={(e) => updateVariant(i, "size", e.target.value)}
             />
             <Input
+              label="Price"
+              type="number"
+              placeholder="Price"
+              value={v.Price}
+              onChange={(e) =>
+                updateVariant(i, "Price", Number(e.target.value))
+              }
+            />
+            <Input
               label="Stock"
               type="number"
               placeholder="Stock"
               value={v.stock}
               onChange={(e) =>
-                updateVariant(i, "stock", Number(e.target.value || 0))
+                updateVariant(i, "stock", Number(e.target.value))
               }
             />
           </div>

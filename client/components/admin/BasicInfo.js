@@ -93,8 +93,8 @@ const BasicInfo = ({ formData, setFormData, categories }) => {
     }));
   };
   return (
-    <div className="card border border-blue-400 p-4 rounded-xl">
-      <h3 className="mb-2 text-lg text-center font-semibold">Basic Info</h3>
+    <div className="border border-blue-400 p-4 rounded-xl">
+      {/* <h3 className="mb-2 text-lg text-center font-semibold">Basic Info</h3> */}
       <Input
         label="Title"
         placeholder="Title"
