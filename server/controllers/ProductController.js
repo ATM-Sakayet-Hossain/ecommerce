@@ -261,10 +261,13 @@ const getProductDetails = async (req, res) => {
     const query = isAdminRequest
       ? { slug: slug.toLowerCase() }
       : { slug: slug.toLowerCase(), isActive: true };
+    const selectFields = isAdminRequest
+      ? "-updatedAt -__v"
+      : "-isActive -updatedAt -__v";
     const productDetails = await productSchema
       .findOne(query)
       .populate("category", "name")
-      .select("-isActive -updatedAt -__v");
+      .select(selectFields);
     if (!productDetails)
       return responseHandler.error(res, 400, "Product is not Found", 404);
     return responseHandler.success(
@@ -295,6 +298,8 @@ const updateProduct = async (req, res) => {
       variants,
       tags,
       isActive,
+      existingThumbnail,
+      existingImages,
       destroyImages = [],
     } = req.body;
     const { slug } = req.params;
@@ -307,7 +312,9 @@ const updateProduct = async (req, res) => {
       return responseHandler.error(res, 404, "Product not found");
     const nextSlug = submittedSlug?.trim()
       ? slugify(submittedSlug, { lower: true, strict: true })
-      : productData.slug;
+      : title?.trim()
+        ? slugify(title, { lower: true, strict: true })
+        : productData.slug;
     if (nextSlug !== productData.slug) {
       const existingProduct = await productSchema.findOne({ slug: nextSlug });
       if (existingProduct)
@@ -316,7 +323,15 @@ const updateProduct = async (req, res) => {
     }
     if (title) productData.title = title;
     if (description) productData.description = description;
-    if (category) productData.category = category;
+    if (category) {
+      const categoryQuery = mongoose.Types.ObjectId.isValid(category)
+        ? { _id: category }
+        : { name: category };
+      const existingCategory = await categorySchema.findOne(categoryQuery);
+      if (!existingCategory)
+        return responseHandler.error(res, 400, "Invalid category");
+      productData.category = existingCategory._id;
+    }
     if (brand !== undefined) productData.brand = brand;
     if (price) productData.price = price;
     if (discountPrice !== undefined)
@@ -375,15 +390,24 @@ const updateProduct = async (req, res) => {
       deleteFromCloudinary(`products/${imgPublicId}`);
       const imgRes = await uploadToCloudinary(thumbnail, "products");
       productData.thumbnail = imgRes.secure_url;
+    } else if (existingThumbnail) {
+      productData.thumbnail = existingThumbnail;
     }
     let imagesUrl = [];
-    let totalImges = productData.images.length;
+    const hasExistingImagesField = existingImages !== undefined;
+    const parsedExistingImages = Array.isArray(existingImages)
+      ? existingImages
+      : typeof existingImages === "string" && existingImages.trim()
+        ? JSON.parse(existingImages)
+        : [];
     const parsedDestroyImages = Array.isArray(destroyImages)
       ? destroyImages
       : typeof destroyImages === "string" && destroyImages.trim()
         ? JSON.parse(destroyImages)
         : [];
-    if (parsedDestroyImages.length > 0) totalImges -= parsedDestroyImages.length;
+    let totalImges = hasExistingImagesField
+      ? parsedExistingImages.length
+      : productData.images.length;
     if (Array.isArray(images) && images.length > 0) totalImges += images.length;
     if (totalImges > 4)
       return responseHandler.error(res, 400, "You can upload maximum 4 images");
@@ -398,14 +422,14 @@ const updateProduct = async (req, res) => {
     }
     if (Array.isArray(parsedDestroyImages) && parsedDestroyImages.length > 0) {
       for (const url of parsedDestroyImages) {
-        const imgPublicId = String(url)
-          .split("/")
-          .pop()
-          .split(".")[0];
+        const imgPublicId = String(url).split("/").pop().split(".")[0];
         deleteFromCloudinary(`products/${imgPublicId}`);
       }
     }
-    let filterImage = productData.images.filter((i) => {
+    const sourceImages = hasExistingImagesField
+      ? parsedExistingImages
+      : productData.images;
+    let filterImage = sourceImages.filter((i) => {
       return !parsedDestroyImages.includes(i);
     });
     imagesUrl = imagesUrl.concat(filterImage);

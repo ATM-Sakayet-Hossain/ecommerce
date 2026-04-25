@@ -13,13 +13,6 @@ const brandOptions = ["nike", "adidas", "puma", "reebok", "new-balance"].map(
   }),
 );
 
-const toSlug = (value) =>
-  String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
 const BasicInfo = ({ formData, setFormData, categories }) => {
   const categoryOptions = (categories || [])
     .map((category) => {
@@ -33,10 +26,10 @@ const BasicInfo = ({ formData, setFormData, categories }) => {
         category?.value ||
         "";
       const value =
-        category?.name ||
-        category?.slug ||
         category?._id ||
+        category?.slug ||
         category?.id ||
+        category?.name ||
         category?.value ||
         "";
       return { label, value };
@@ -51,46 +44,38 @@ const BasicInfo = ({ formData, setFormData, categories }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setFormData((prev) => ({
-      ...(name === "isActive"
-        ? {
-            ...prev,
-            isActive: value === "true",
-          }
-        : name === "discountType"
-          ? {
-              ...prev,
-              discountType: value,
-              ...(value === "percentage"
-                ? { discountPrice: 0 }
-                : { discountPercentage: 0 }),
-            }
-          : name === "discountValue"
-            ? {
-                ...prev,
-                ...(prev.discountType === "percentage"
-                  ? { discountPercentage: Number(value || 0), discountPrice: 0 }
-                  : {
-                      discountPrice: Number(value || 0),
-                      discountPercentage: 0,
-                    }),
-              }
-              : name === "title"
-                ? {
-                    ...prev,
-                    title: value,
-                    slug: prev.slug?.trim() ? prev.slug : toSlug(value),
-                  }
-                : name === "slug"
-                  ? {
-                      ...prev,
-                      slug: value || toSlug(prev.title),
-                    }
-            : {
-                ...prev,
-                [name]: value,
-              }),
-    }));
+    setFormData((prev) => {
+      if (name === "isActive") {
+        return {
+          ...prev,
+          isActive: value === "true",
+        };
+      }
+
+      if (name === "discountType") {
+        return {
+          ...prev,
+          discountType: value,
+          ...(value === "percentage"
+            ? { discountPrice: 0 }
+            : { discountPercentage: 0 }),
+        };
+      }
+
+      if (name === "discountValue") {
+        return {
+          ...prev,
+          ...(prev.discountType === "percentage"
+            ? { discountPercentage: Number(value || 0), discountPrice: 0 }
+            : { discountPrice: Number(value || 0), discountPercentage: 0 }),
+        };
+      }
+
+      return {
+        ...prev,
+        [name]: value,
+      };
+    });
   };
   return (
     <div className="border border-blue-400 p-4 rounded-xl">
@@ -101,14 +86,6 @@ const BasicInfo = ({ formData, setFormData, categories }) => {
         type="text"
         name="title"
         value={formData.title}
-        onChange={handleChange}
-      />
-      <Input
-        label="Slug"
-        placeholder="Slug"
-        type="text"
-        name="slug"
-        value={formData.slug}
         onChange={handleChange}
       />
       <Textarea

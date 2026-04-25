@@ -63,7 +63,7 @@ const ProductVariants = ({ variants = [], setVariants = () => {} }) => {
           </Button>
         </div>
       </div>
-      <div className="h-[calc(100vh-18rem)] overflow-y-auto scrollbar-hide pt-3">
+      <div className="h-[calc(100vh-20rem)] overflow-y-auto scrollbar-hidden pt-3">
         {variants.map((v, i) => (
           <div
             key={i}

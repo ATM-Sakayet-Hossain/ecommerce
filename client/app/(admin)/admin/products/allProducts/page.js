@@ -274,13 +274,13 @@ const Page = () => {
                         </td>
                         <td className="px-4 py-3 font-semibold">
                           <div className="flex items-center gap-2">
-                            <button
-                              type="button"
+                            <Link
+                              href={`/admin/products/${product?.slug}`}
                               className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs hover:bg-gray-100"
                             >
                               <Eye className="h-3.5 w-3.5" />
                               View
-                            </button>
+                            </Link>
                             <Link
                               href={`/admin/products/${product?.slug}`}
                               className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs hover:bg-gray-100"

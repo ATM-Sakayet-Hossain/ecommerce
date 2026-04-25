@@ -14,13 +14,6 @@ import ProductVariants from "@/components/admin/ProductVariants";
 import Button from "@/components/UI/Button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
-const toSlug = (value) =>
-  String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
 const initialVariants = [
   {
     sku: "",
@@ -32,7 +25,6 @@ const initialVariants = [
 
 const buildFormData = (product) => ({
   title: product?.title || "",
-  slug: product?.slug || "",
   description: product?.description || "",
   category: product?.category?._id || product?.category || "",
   brand: product?.brand || "",
@@ -79,8 +71,6 @@ const ProductEditor = ({ product, categories, router, productSlug }) => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const finalSlug = formData.slug.trim() || toSlug(formData.title);
-
     if (!formData.title.trim()) {
       toast.error("Product title is required.");
       return;
@@ -108,11 +98,6 @@ const ProductEditor = ({ product, categories, router, productSlug }) => {
 
     if (existingImages.length + formData.images.length < 1) {
       toast.error("At least one product image is required.");
-      return;
-    }
-
-    if (!finalSlug) {
-      toast.error("Product slug is required.");
       return;
     }
 
@@ -145,7 +130,6 @@ const ProductEditor = ({ product, categories, router, productSlug }) => {
 
     const payload = new FormData();
     payload.append("title", formData.title.trim());
-    payload.append("slug", finalSlug);
     payload.append("description", formData.description.trim());
     payload.append("category", formData.category);
     payload.append("brand", formData.brand);
@@ -173,6 +157,9 @@ const ProductEditor = ({ product, categories, router, productSlug }) => {
     if (formData.thumbnail) {
       payload.append("thumbnail", formData.thumbnail);
     }
+
+    payload.append("existingThumbnail", thumbnailPreview || "");
+    payload.append("existingImages", JSON.stringify(existingImages));
 
     if (removedImages.length > 0) {
       payload.append("destroyImages", JSON.stringify(removedImages));

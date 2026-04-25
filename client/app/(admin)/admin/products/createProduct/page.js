@@ -13,16 +13,8 @@ import ProductVariants from "@/components/admin/ProductVariants";
 import Button from "@/components/UI/Button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
-const toSlug = (value) =>
-  String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
 const initialFormData = {
   title: "",
-  slug: "",
   description: "",
   category: "",
   brand: "",
@@ -61,8 +53,6 @@ const Page = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const finalSlug = formData.slug.trim() || toSlug(formData.title);
-
     if (!formData.title.trim()) {
       toast.error("Product title is required.");
       return;
@@ -88,18 +78,14 @@ const Page = () => {
       return;
     }
 
-    if (!finalSlug) {
-      toast.error("Product slug is required.");
-      return;
-    }
-
     const normalizedVariants = variants.map((variant) => ({
       ...variant,
       stock: Number(variant.stock || 0),
     }));
 
     const hasValidVariant = normalizedVariants.some(
-      (variant) => variant.sku && variant.color && variant.size && variant.stock >= 0,
+      (variant) =>
+        variant.sku && variant.color && variant.size && variant.stock >= 0,
     );
 
     if (!hasValidVariant) {
@@ -116,7 +102,6 @@ const Page = () => {
 
     const payload = new FormData();
     payload.append("title", formData.title.trim());
-    payload.append("slug", finalSlug);
     payload.append("description", formData.description.trim());
     payload.append("category", formData.category);
     payload.append("brand", formData.brand);
@@ -151,7 +136,9 @@ const Page = () => {
       toast.success("Product created successfully.");
       router.push("/admin/products/allProducts");
     } catch (error) {
-      toast.error(error?.data?.message || error?.error || "Unable to create product.");
+      toast.error(
+        error?.data?.message || error?.error || "Unable to create product.",
+      );
     }
   };
 
