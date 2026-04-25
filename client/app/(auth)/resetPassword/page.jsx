@@ -4,7 +4,7 @@ import Button from "@/components/UI/Button";
 import Input from "@/components/UI/Input";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const Page = () => {
   const router = useRouter();
@@ -16,6 +16,12 @@ const Page = () => {
     newPassword: "",
     confirmPassword: "",
   });
+
+  useEffect(() => {
+    if (!token) {
+      router.replace("/");
+    }
+  }, [router, token]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

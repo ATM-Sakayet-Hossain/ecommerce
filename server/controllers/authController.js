@@ -261,6 +261,8 @@ const resetPassword = async (req, res) => {
   try {
     const { newPassword, confirmPassword } = req.body;
     const token = req.query.sec;
+    if (!token)
+      return responseHandler.error(res, 400, "Reset token is missing.");
     if (!newPassword)
       return responseHandler.error(res, 400, "New password is required.");
     if (!confirmPassword)
@@ -268,6 +270,7 @@ const resetPassword = async (req, res) => {
     if (newPassword != confirmPassword)
       return responseHandler.error(
         res,
+        400,
         "Please provide and confirm your new password.",
       );
     const hashedToken = hashResetToken(token);
@@ -280,7 +283,7 @@ const resetPassword = async (req, res) => {
     existingUser.password = newPassword;
     existingUser.resetPassToken = undefined;
     existingUser.resetExpires = undefined;
-    existingUser.save();
+    await existingUser.save();
     responseHandler.success(
       res,
       200,
