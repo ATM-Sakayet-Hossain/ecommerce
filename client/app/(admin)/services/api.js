@@ -40,13 +40,41 @@ export const adminApiService = createApi({
     getProductBySlug: build.query({
       query: (slug) => `/product/admin/${slug}`,
     }),
+    createCategories: build.mutation({
+      query: (body) => ({
+        url: "/category/create",
+        method: "POST",
+        body,
+      }),
+    }),
+    updateCategories: build.mutation({
+      query: ({ slug, body }) => ({
+        url: `/category/update/${slug}`,
+        method: "PUT",
+        body,
+      }),
+    }),
+    getCategoriesAdmin: build.query({
+      query: (params = {}) => ({
+        url: "/category/admin/get",
+        params,
+      }),
+    }),
+    
+    getCategoryBySlug: build.query({
+      query: (slug) => `/category/get/${slug}`,
+    }),
   }),
 });
 
 export const {
   useGetProductsQuery,
   useGetCategoriesQuery,
+  useGetCategoryBySlugQuery,
   useCreateProductMutation,
   useUpdateProductMutation,
   useGetProductBySlugQuery,
+  useCreateCategoriesMutation,
+  useUpdateCategoriesMutation,
+  useGetCategoriesAdminQuery,
 } = adminApiService;

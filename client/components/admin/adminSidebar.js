@@ -17,8 +17,8 @@ const adminMenuItems = [
   {
     title: "Categories",
     subItems: [
-      { title: "Categories", to: "/categories" },
-      { title: "Categories Details", to: "/categories/:id" },
+      { title: "Add Categories", to: "/admin/categories/createCategories" },
+      { title: "Categories", to: "/admin/categories/allCategories" },
     ],
   },
   {

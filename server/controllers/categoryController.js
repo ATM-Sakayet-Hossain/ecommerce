@@ -52,14 +52,154 @@ const getAllCategory = async (req, res) => {
   try {
     const { page, limit, skip } = getPagination(req);
     const userRole = req.user?.role;
+    const {
+      search,
+      isActive,
+      sortBy = "createdAt",
+      order = "desc",
+    } = req.query;
     let matchCategory = { isActive: true };
     const isAdmin = userRole === "admin" || userRole === "editor";
     if (isAdmin) {
       matchCategory = {};
     }
+
+    if (isAdmin && isActive !== undefined) {
+      if (isActive === "true" || isActive === "false") {
+        matchCategory.isActive = isActive === "true";
+      }
+    }
+
+    const normalizedSearch = String(search || "").trim();
+    const normalizedOrder = String(order).toLowerCase() === "asc" ? 1 : -1;
+    const allowedSortFields = new Set([
+      "createdAt",
+      "updatedAt",
+      "name",
+      "slug",
+      "sortOrder",
+      "isActive",
+      "parentName",
+      "createdByUsername",
+      "updatedByUsername",
+    ]);
+    const resolvedSortField = allowedSortFields.has(sortBy)
+      ? sortBy
+      : "createdAt";
+
     const result = await categorySchema.aggregate([
       { $match: matchCategory },
-      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdBy",
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "updatedBy",
+          foreignField: "_id",
+          as: "updatedBy",
+        },
+      },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "parent",
+          foreignField: "_id",
+          as: "parentData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$createdBy",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $unwind: {
+          path: "$updatedBy",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $unwind: {
+          path: "$parentData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          name: 1,
+          slug: 1,
+          thumbnail: 1,
+          description: 1,
+          parent: 1,
+          parentName: "$parentData.name",
+          parentData: {
+            _id: "$parentData._id",
+            name: "$parentData.name",
+            slug: "$parentData.slug",
+          },
+          isActive: 1,
+          statusLabel: {
+            $cond: [{ $eq: ["$isActive", true] }, "Active", "Inactive"],
+          },
+          sortOrder: 1,
+          createdBy: {
+            _id: "$createdBy._id",
+            fullName: "$createdBy.fullName",
+            email: "$createdBy.email",
+            role: "$createdBy.role",
+          },
+          createdByUsername: {
+            $ifNull: ["$createdBy.fullName", "$createdBy.email"],
+          },
+          updatedBy: {
+            _id: "$updatedBy._id",
+            fullName: "$updatedBy.fullName",
+            email: "$updatedBy.email",
+            role: "$updatedBy.role",
+          },
+          updatedByUsername: {
+            $ifNull: ["$updatedBy.fullName", "$updatedBy.email"],
+          },
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      },
+      ...(normalizedSearch
+        ? [
+            {
+              $match: {
+                $or: [
+                  { name: { $regex: normalizedSearch, $options: "i" } },
+                  { slug: { $regex: normalizedSearch, $options: "i" } },
+                  {
+                    parentName: { $regex: normalizedSearch, $options: "i" },
+                  },
+                  {
+                    createdByUsername: {
+                      $regex: normalizedSearch,
+                      $options: "i",
+                    },
+                  },
+                  {
+                    updatedByUsername: {
+                      $regex: normalizedSearch,
+                      $options: "i",
+                    },
+                  },
+                  { statusLabel: { $regex: normalizedSearch, $options: "i" } },
+                ],
+              },
+            },
+          ]
+        : []),
+      { $sort: { [resolvedSortField]: normalizedOrder, _id: normalizedOrder } },
       {
         $facet: {
           data: [{ $skip: skip }, { $limit: limit }],
@@ -92,6 +232,36 @@ const getAllCategory = async (req, res) => {
     );
   }
 };
+const getCategoryBySlug = async (req, res) => {
+  const { slug } = req.params;
+
+  try {
+    const category = await categorySchema
+      .findOne({ slug })
+      .populate("createdBy", "fullName email role")
+      .populate("updatedBy", "fullName email role")
+      .populate("parent", "_id name slug")
+      .lean();
+
+    if (!category) {
+      return responseHandler.error(res, 404, "Category not found");
+    }
+
+    responseHandler.success(
+      res,
+      200,
+      category,
+      "Category fetched successfully",
+    );
+  } catch (error) {
+    console.log(error);
+    responseHandler.error(
+      res,
+      500,
+      "Something went wrong. Please try again later",
+    );
+  }
+};
 const updateCategory = async (req, res) => {
   const { slug } = req.params;
   const { name, description, parent, sortOrder, isActive } = req.body;
@@ -114,7 +284,8 @@ const updateCategory = async (req, res) => {
     if (description) category.description = description;
     if (sortOrder !== undefined) category.sortOrder = Number(sortOrder);
     if (parent !== undefined) category.parent = parent || null;
-    if (isActive !== undefined) category.isActive = isActive;
+    if (isActive !== undefined)
+      category.isActive = isActive === "true" || isActive === true;
     if (thumbnail && category.thumbnail) {
       const publicId = category.thumbnail.split("/").pop().split(".")[0];
       await deleteFromCloudinary(`category/${publicId}`);
@@ -137,5 +308,6 @@ const updateCategory = async (req, res) => {
 module.exports = {
   createCategory,
   getAllCategory,
+  getCategoryBySlug,
   updateCategory,
 };
