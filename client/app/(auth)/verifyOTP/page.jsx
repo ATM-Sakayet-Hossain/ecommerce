@@ -81,7 +81,7 @@ export default function VerifyOtpPage() {
 
     try {
       const res = await fetch(
-        process.env.NEXT_PUBLIC_BASE_URL + "/auth/verifyOTP",
+        `${process.env.NEXT_PUBLIC_BASE_URL}/auth/verifyOTP`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

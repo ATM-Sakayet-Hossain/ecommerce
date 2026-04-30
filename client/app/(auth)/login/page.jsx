@@ -19,7 +19,7 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       const res = await fetch(
-        process.env.NEXT_PUBLIC_BASE_URL + "/auth/login",
+        `${process.env.NEXT_PUBLIC_BASE_URL}/auth/login`,
         {
           method: "POST",
           credentials: "include",
