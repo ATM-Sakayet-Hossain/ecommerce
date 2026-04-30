@@ -2,6 +2,12 @@ const mongoose = require("mongoose");
 
 const bannerSchema = new mongoose.Schema(
   {
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+    },
     title: {
       type: String,
       required: true,

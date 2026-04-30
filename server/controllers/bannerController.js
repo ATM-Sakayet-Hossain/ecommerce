@@ -1,4 +1,5 @@
-const bannerSchema = require("../model/bannerSchema");
+const slugify = require("slugify");
+const bannerSchema = require("../models/bannerSchema");
 const {
   uploadToCloudinary,
   deleteFromCloudinary,
@@ -17,6 +18,11 @@ const createBanner = async (req, res) => {
     if (!title) return responseHandler.error(res, 400, "Title is required");
     if (!image)
       return responseHandler.error(res, 400, "Banner Image is required");
+    const slug = slugify(title, { lower: true, strict: true });
+    const existingSlug = await bannerSchema.findOne({ slug });
+    if (existingSlug) {
+      return responseHandler.error(res, 400, "Banner slug already exists");
+    }
     const start = parseDateOrNull(startDate);
     const end = parseDateOrNull(endDate);
     if (start === undefined)
@@ -26,7 +32,8 @@ const createBanner = async (req, res) => {
     const rangeError = validateDateRange(start, end);
     if (rangeError) return responseHandler.error(res, 400, rangeError);
     const bannerImg = await uploadToCloudinary(image, "banner");
-    const banner = await bannerSchema({
+    const banner = new bannerSchema({
+      slug,
       title,
       subtitle,
       image: bannerImg.secure_url,
@@ -49,6 +56,7 @@ const getAllBanners = async (req, res) => {
   try {
     const { page, limit, skip } = getPagination(req);
     const userRole = req.user?.role;
+    const now = new Date();
     let matchStage = {
       isActive: true,
       startDate: { $lte: now },
@@ -85,6 +93,27 @@ const getAllBanners = async (req, res) => {
       "All banners fetched",
     );
   } catch (error) {
+    console.log(error);
+    responseHandler.error(
+      res,
+      500,
+      "Something went wrong. Please try again later",
+    );
+  }
+};
+const getBannerBySlug = async (req, res) => {
+  const { slug } = req.params;
+
+  try {
+    const banner = await bannerSchema.findOne({ slug: slug?.toLowerCase() });
+
+    if (!banner) {
+      return responseHandler.error(res, 404, "Banner not found");
+    }
+
+    responseHandler.success(res, 200, banner, "Banner fetched successfully");
+  } catch (error) {
+    console.log(error);
     responseHandler.error(
       res,
       500,
@@ -93,21 +122,27 @@ const getAllBanners = async (req, res) => {
   }
 };
 const updateBanner = async (req, res) => {
-  const id = req.params.id;
+  const { slug } = req.params;
   const { title, subtitle, isActive, startDate, endDate } = req.body;
   const image = req.file;
   try {
-    const existingBanner = await bannerSchema.findById(id);
+    const existingBanner = await bannerSchema.findOne({
+      slug: slug?.toLowerCase(),
+    });
     if (!existingBanner)
       return responseHandler.error(res, 404, "Banner not found");
     if (title) existingBanner.title = title;
     if (subtitle) existingBanner.subtitle = subtitle;
     if (isActive !== undefined) existingBanner.isActive = isActive;
-    if (startDate !== undefined)
-      existingBanner.startDate = parseDateOrNull(startDate);
-    if (endDate !== undefined)
-      existingBanner.endDate = parseDateOrNull(endDate);
-    const rangeError = validateDateRange(startDate, endDate);
+    const nextStartDate =
+      startDate !== undefined
+        ? parseDateOrNull(startDate)
+        : existingBanner.startDate;
+    const nextEndDate =
+      endDate !== undefined ? parseDateOrNull(endDate) : existingBanner.endDate;
+    if (startDate !== undefined) existingBanner.startDate = nextStartDate;
+    if (endDate !== undefined) existingBanner.endDate = nextEndDate;
+    const rangeError = validateDateRange(nextStartDate, nextEndDate);
     if (rangeError) return responseHandler.error(res, 400, rangeError);
     if (image && existingBanner.image) {
       const publicId = existingBanner.image.split("/").pop().split(".")[0];
@@ -127,9 +162,11 @@ const updateBanner = async (req, res) => {
   }
 };
 const deleteBanner = async (req, res) => {
-  const id = req.params.id;
+  const { slug } = req.params;
   try {
-    const existingBanner = await bannerSchema.findByIdAndDelete(id);
+    const existingBanner = await bannerSchema.findOneAndDelete({
+      slug: slug?.toLowerCase(),
+    });
     if (!existingBanner)
       return responseHandler.error(res, 404, "Banner not found");
     const publicId = existingBanner.image.split("/").pop().split(".")[0];
@@ -148,6 +185,7 @@ const deleteBanner = async (req, res) => {
 module.exports = {
   createBanner,
   getAllBanners,
+  getBannerBySlug,
   updateBanner,
   deleteBanner,
 };

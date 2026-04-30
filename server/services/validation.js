@@ -12,4 +12,31 @@ const isStrongPassword = (password) => {
   return strongPassRegex.test(password);
 };
 
-module.exports = { isValidUsername, isValidEmail, isStrongPassword, };
+const parseDateOrNull = (value) => {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return undefined;
+  }
+
+  return parsed;
+};
+
+const validateDateRange = (startDate, endDate) => {
+  if (startDate && endDate && startDate > endDate) {
+    return "Start date must be before end date";
+  }
+
+  return null;
+};
+
+module.exports = {
+  isValidUsername,
+  isValidEmail,
+  isStrongPassword,
+  parseDateOrNull,
+  validateDateRange,
+};

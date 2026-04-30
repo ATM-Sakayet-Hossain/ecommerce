@@ -45,7 +45,7 @@ const AdminHeader = ({ isSidebarExpanded, onToggleSidebar }) => {
   return (
     <header className="sticky top-0 z-40 w-full flex justify-between border-b border-emerald-200/70 bg-linear-to-r from-emerald-700 to-cyan-700 text-white px-4 md:px-8 py-3 shadow-md backdrop-blur">
       <div className="text-xl flex items-center gap-4">
-        <Link href="/admin/dashboard" className="font-extrabold tracking-wide">
+        <Link href="/" className="font-extrabold tracking-wide">
           E-Commerce
         </Link>
         <button

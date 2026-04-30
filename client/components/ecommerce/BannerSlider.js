@@ -1,24 +1,68 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { FiChevronLeft, FiChevronRight, FiPause, FiPlay } from "react-icons/fi";
 
-function BannerSlider({ banners, fallbackTitle = "No active campaigns right now", fallbackSubtitle = "Scheduled banners will appear here when they are live." }) {
+function BannerSlider() {
+  const [banners, setBanners] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadBanners = async () => {
+      try {
+        setIsLoading(true);
+        setError("");
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/banner/get`,
+          {
+            next: { revalidate: 500000 },
+          },
+        );
+        if (!response.ok) {
+          throw new Error("Unable to load banners");
+        }
+        const payload = await response.json();
+        const nextBanners = payload?.data?.banners || payload?.banners || [];
+        if (isMounted) {
+          setBanners(nextBanners);
+          setActiveIndex(0);
+        }
+      } catch (loadError) {
+        if (isMounted) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Unable to load banners",
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+    loadBanners();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (paused || banners.length <= 1) {
       return undefined;
     }
 
-    const interval = window.setInterval(() => {
+    const timer = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % banners.length);
-    }, 5000);
+    }, 6000);
 
-    return () => window.clearInterval(interval);
-  }, [banners.length, paused]);
+    return () => window.clearInterval(timer);
+  }, [paused, banners.length]);
 
   useEffect(() => {
     if (activeIndex >= banners.length) {
@@ -26,75 +70,119 @@ function BannerSlider({ banners, fallbackTitle = "No active campaigns right now"
     }
   }, [activeIndex, banners.length]);
 
-  if (!banners.length) {
+  const slide = banners[activeIndex];
+  const slideImage = typeof slide?.image === "string" ? slide.image.trim() : "";
+
+  const formatDate = (value) => {
+    if (!value) {
+      return "";
+    }
+
+    const date = new Date(value);
+    return Number.isNaN(date.getTime())
+      ? ""
+      : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
+
+  if (isLoading) {
     return (
-      <div className="relative overflow-hidden rounded-4xl border border-slate-200 bg-slate-950 p-6 text-white shadow-[0_20px_60px_rgba(15,23,42,0.2)] sm:p-8 lg:p-10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.28),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(14,165,233,0.18),transparent_30%)]" />
-        <div className="relative max-w-2xl space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-200">Campaigns</p>
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{fallbackTitle}</h2>
-          <p className="max-w-xl text-sm leading-6 text-slate-300 sm:text-base">{fallbackSubtitle}</p>
+      <section className="group relative overflow-hidden rounded-4xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+        <div className="relative aspect-4/5 min-h-96 sm:aspect-video lg:aspect-21/8">
+          <Image
+            src="/banner.png"
+            alt="Loading banner"
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 1200px"
+            priority
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.15),rgba(15,23,42,0.24))]" />
+          <div className="relative flex h-full flex-col justify-end p-5 text-white sm:p-8 lg:p-10">
+            <div className="max-w-2xl space-y-6">
+              <div className="h-6 w-32 rounded-full bg-white/30" />
+              <div className="h-12 w-3/4 rounded-2xl bg-white/25 sm:h-14 lg:h-20" />
+              <div className="h-4 w-full max-w-xl rounded-full bg-white/20" />
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
     );
   }
 
-  const slide = banners[activeIndex];
+  if (error) {
+    return (
+      <section className="overflow-hidden rounded-4xl border border-slate-200 bg-slate-950 shadow-[0_20px_60px_rgba(15,23,42,0.18)]">
+        <div className="flex min-h-96 items-center justify-center p-8 text-sm font-medium text-rose-200">
+          {error}
+        </div>
+      </section>
+    );
+  }
+
+  if (!slide) {
+    return (
+      <section className="overflow-hidden rounded-4xl border border-slate-200 bg-slate-950 shadow-[0_20px_60px_rgba(15,23,42,0.18)]">
+        <div className="flex min-h-96 items-center justify-center p-8 text-sm font-medium text-slate-300">
+          No banners available.
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <section
-      className="group relative overflow-hidden rounded-4xl border border-slate-200 bg-slate-950 shadow-[0_20px_60px_rgba(15,23,42,0.18)]"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
-      <div className="relative aspect-4/5 min-h-[24rem] sm:aspect-16/9 lg:aspect-21/8">
-        <Image
-          src={slide.image}
-          alt={slide.title}
-          fill
-          className="object-cover transition duration-700 group-hover:scale-[1.03]"
-          sizes="(max-width: 768px) 100vw, 1200px"
-          loading="lazy"
-        />
+    <section className="group relative overflow-hidden rounded-4xl border border-slate-200 bg-slate-950 shadow-[0_20px_60px_rgba(15,23,42,0.18)]">
+      <div className="relative aspect-4/5 min-h-96 sm:aspect-video lg:aspect-21/8">
+        {slideImage ? (
+          <Image
+            src={slideImage}
+            alt={slide?.title || "Banner image"}
+            fill
+            className="flex items-center justify-end h-20 w-20 object-cover transition duration-700 group-hover:scale-[1.08]"
+            sizes="(max-width: 768px) 100vw, 1200px"
+            loading="lazy"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-slate-900" />
+        )}
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.15),rgba(2,6,23,0.76))]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.2),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.16),transparent_30%)]" />
-
-        <div className="relative flex h-full flex-col justify-end p-5 text-white sm:p-8 lg:p-10">
-          <div className="max-w-2xl space-y-4">
+        {/* banner contant */}
+        <div className="relative flex h-full flex-col justify-around p-5 text-white sm:p-8 lg:p-10">
+          <div className="max-w-2xl space-y-14">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-100 backdrop-blur-md">
               Live campaign
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-10">
               <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl lg:text-6xl">
-                {slide.title}
+                {slide?.title}
               </h2>
-              {slide.subtitle ? (
+              {slide?.subtitle ? (
                 <p className="max-w-xl text-sm leading-6 text-slate-200 sm:text-base lg:text-lg">
-                  {slide.subtitle}
+                  {slide?.subtitle}
                 </p>
               ) : null}
             </div>
 
             <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-slate-300 sm:text-sm">
-              {slide.startDate ? (
+              {slide?.startDate ? (
                 <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5 backdrop-blur-sm">
-                  Starts {slide.startDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  Starts {formatDate(slide?.startDate)}
                 </span>
               ) : null}
-              {slide.endDate ? (
+              {slide?.endDate ? (
                 <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5 backdrop-blur-sm">
-                  Ends {slide.endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  Ends {formatDate(slide?.endDate)}
                 </span>
               ) : null}
             </div>
           </div>
-
+          {/* banner button */}
           <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               {banners.map((banner, index) => (
                 <button
-                  key={banner.id}
+                  key={banner?._id ?? banner?.slug ?? index}
                   type="button"
                   aria-label={`Show banner ${index + 1}`}
                   onClick={() => setActiveIndex(index)}
@@ -115,7 +203,12 @@ function BannerSlider({ banners, fallbackTitle = "No active campaigns right now"
               <button
                 type="button"
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/15"
-                onClick={() => setActiveIndex((current) => (current - 1 + banners.length) % banners.length)}
+                onClick={() =>
+                  setActiveIndex(
+                    (current) =>
+                      (current - 1 + banners.length) % banners.length,
+                  )
+                }
                 aria-label="Previous banner"
               >
                 <FiChevronLeft size={18} />
@@ -123,7 +216,9 @@ function BannerSlider({ banners, fallbackTitle = "No active campaigns right now"
               <button
                 type="button"
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/15"
-                onClick={() => setActiveIndex((current) => (current + 1) % banners.length)}
+                onClick={() =>
+                  setActiveIndex((current) => (current + 1) % banners.length)
+                }
                 aria-label="Next banner"
               >
                 <FiChevronRight size={18} />

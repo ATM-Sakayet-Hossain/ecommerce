@@ -60,9 +60,32 @@ export const adminApiService = createApi({
         params,
       }),
     }),
-    
+
     getCategoryBySlug: build.query({
       query: (slug) => `/category/get/${slug}`,
+    }),
+    getBanner: build.query({
+      query: (params = {}) => ({
+        url: "/banner/admin/get",
+        params,
+      }),
+    }),
+    getBannerBySlug: build.query({
+      query: (slug) => `/banner/admin/get/${slug}`,
+    }),
+    createBanner: build.mutation({
+      query: (body) => ({
+        url: "/banner/create",
+        method: "POST",
+        body,
+      }),
+    }),
+    updateBanner: build.mutation({
+      query: ({ slug, body }) => ({
+        url: `/banner/update/${slug}`,
+        method: "PUT",
+        body,
+      }),
     }),
   }),
 });
@@ -77,4 +100,8 @@ export const {
   useCreateCategoriesMutation,
   useUpdateCategoriesMutation,
   useGetCategoriesAdminQuery,
+  useGetBannerQuery,
+  useGetBannerBySlugQuery,
+  useCreateBannerMutation,
+  useUpdateBannerMutation,
 } = adminApiService;
