@@ -24,6 +24,7 @@ route.get(
   roleCheckMiddleware("admin", "editor"),
   getAllCategory,
 );
+route.get("/public/:slug", getCategoryBySlug);
 route.get(
   "/get/:slug",
   authMiddleWare,

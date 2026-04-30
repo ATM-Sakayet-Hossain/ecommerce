@@ -158,8 +158,8 @@ const CategorySlider = () => {
         >
           {categories.map((cat) => (
             <Link
-              key={cat.slug}
-              href={`/categories/${cat.slug}`}
+              key={cat?.slug}
+              href={`/categories/${cat?.slug}`}
               data-slider-item
               className="block min-w-0 shrink-0 basis-1/2 sm:basis-1/3 lg:basis-1/6"
             >

@@ -91,6 +91,26 @@ const getAllCategory = async (req, res) => {
       { $match: matchCategory },
       {
         $lookup: {
+          from: "products",
+          let: { categoryId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$category", "$$categoryId"] },
+                    { $eq: ["$isActive", true] },
+                  ],
+                },
+              },
+            },
+            { $count: "count" },
+          ],
+          as: "productCountData",
+        },
+      },
+      {
+        $lookup: {
           from: "users",
           localField: "createdBy",
           foreignField: "_id",
@@ -136,6 +156,7 @@ const getAllCategory = async (req, res) => {
           name: 1,
           slug: 1,
           thumbnail: 1,
+          count: { $ifNull: [{ $first: "$productCountData.count" }, 0] },
           description: 1,
           parent: 1,
           parentName: "$parentData.name",

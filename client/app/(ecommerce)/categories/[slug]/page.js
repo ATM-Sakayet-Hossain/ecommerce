@@ -2,18 +2,80 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import PageContainer from "@/components/layout/PageContainer";
-import CategoryTreeNav from "@/components/ecommerce/CategoryTreeNav";
-import {
-  buildCategoryTree,
-  currency,
-  filterProducts,
-  getCategoryBySlug,
-  getCategoryPath,
-  getCategoryProductCount,
-  products,
-  sortProducts,
-} from "@/components/ecommerce/data";
+import CategoryNav from "@/components/ecommerce/CategoryNav";
 import { FiArrowRight, FiStar } from "react-icons/fi";
+
+export const dynamic = "force-dynamic";
+
+function normalizeParent(parent) {
+  if (!parent || parent === "null") {
+    return null;
+  }
+
+  return typeof parent === "string"
+    ? parent
+    : (parent?._id ?? parent?.slug ?? null);
+}
+
+function getCategoryKey(category) {
+  return category?.slug ?? null;
+}
+
+function getParentCategoryKey(category) {
+  return (
+    category?.parentData?.slug ??
+    category?.parent?.slug ??
+    category?.parent ??
+    null
+  );
+}
+
+function buildCategoryTree(categories) {
+  const nodeMap = new Map(
+    categories.map((category) => [
+      getCategoryKey(category),
+      {
+        ...category,
+        parent: getParentCategoryKey(category),
+        count: 0,
+        children: [],
+      },
+    ]),
+  );
+
+  const roots = [];
+
+  nodeMap.forEach((node) => {
+    const parentKey = normalizeParent(node.parent);
+
+    if (parentKey && nodeMap.has(parentKey)) {
+      nodeMap.get(parentKey).children.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+
+  const sortNodes = (nodes) => {
+    nodes.sort((left, right) => {
+      const orderDelta = (left.sortOrder || 0) - (right.sortOrder || 0);
+      return orderDelta !== 0
+        ? orderDelta
+        : left.name.localeCompare(right.name);
+    });
+
+    nodes.forEach((node) => sortNodes(node.children));
+  };
+
+  sortNodes(roots);
+
+  return roots;
+}
+
+function sortByNewest(items) {
+  return [...items].sort(
+    (left, right) => new Date(right.createdAt) - new Date(left.createdAt),
+  );
+}
 
 function flattenRoutes(nodes, routes = []) {
   nodes.forEach((node) => {
@@ -26,13 +88,139 @@ function flattenRoutes(nodes, routes = []) {
   return routes;
 }
 
+function getCategoryChildrenMap(categories) {
+  return categories.reduce((map, category) => {
+    const parentKey = getParentCategoryKey(category);
+
+    if (!parentKey) {
+      return map;
+    }
+
+    const children = map.get(parentKey) ?? [];
+    children.push(category);
+    map.set(parentKey, children);
+    return map;
+  }, new Map());
+}
+function getCategoryDescendantSlugs(slug, categoryChildrenMap) {
+  const branch = [];
+  const stack = [slug];
+
+  while (stack.length) {
+    const current = stack.pop();
+    if (!current) {
+      continue;
+    }
+
+    branch.push(current);
+    const children = categoryChildrenMap.get(current) ?? [];
+    children.forEach((child) => stack.push(child.slug));
+  }
+
+  return branch;
+}
+
+function getProductCategorySlug(product) {
+  return (
+    product?.categoryData?.slug ||
+    product?.category?.slug ||
+    product?.categorySlug ||
+    ""
+  );
+}
+
+function countProductsForSlug(slug, categoryChildrenMap, products) {
+  const descendantSlugs = new Set(
+    getCategoryDescendantSlugs(slug, categoryChildrenMap),
+  );
+
+  return products.filter((product) =>
+    descendantSlugs.has(getProductCategorySlug(product)),
+  ).length;
+}
+
+function applyCategoryCounts(nodes, categoryChildrenMap, products) {
+  return nodes.map((node) => ({
+    ...node,
+    count: countProductsForSlug(node.slug, categoryChildrenMap, products),
+    children: applyCategoryCounts(node.children, categoryChildrenMap, products),
+  }));
+}
+
+function getCategoryBySlug(slug, categoryMap) {
+  return categoryMap.get(slug) ?? null;
+}
+
+function buildBreadcrumbFromCategory(category, categoryMap) {
+  const trail = [];
+  let current = category ?? null;
+
+  while (current) {
+    trail.unshift({
+      slug: current.slug,
+      name: current.name,
+    });
+
+    const parentSlug = getParentCategoryKey(current);
+
+    if (!parentSlug) {
+      break;
+    }
+
+    current = categoryMap.get(parentSlug) ?? current.parent ?? null;
+  }
+
+  return trail;
+}
+
+async function loadCategories() {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/category/get?page=1&limit=1000&sortBy=sortOrder&order=asc`,
+    { cache: "no-store" },
+  );
+
+  if (!response.ok) {
+    throw new Error("Unable to load categories");
+  }
+
+  const payload = await response.json();
+
+  return payload?.data?.categories || payload?.categories || [];
+}
+
+async function loadProducts() {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/product/get`,
+    {
+      cache: "no-store",
+      next: { revalidate: 0 },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("Unable to load products");
+  }
+
+  const payload = await response.json();
+
+  return (
+    payload?.data?.product || payload?.data?.products || payload?.product || []
+  );
+}
+
 export async function generateStaticParams() {
-  return flattenRoutes(buildCategoryTree());
+  const categories = await loadCategories();
+  return flattenRoutes(buildCategoryTree(categories));
 }
 
 export async function generateMetadata({ params }) {
-  const { slug } = await params;
-  const category = getCategoryBySlug(slug);
+  const rawSlug = (await params)?.slug;
+  const slug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug;
+  const categories = await loadCategories();
+  const categoryMap = new Map(
+    categories.map((category) => [category.slug, category]),
+  );
+  const category = getCategoryBySlug(slug, categoryMap);
 
   if (!category) {
     return { title: "Category not found | SakkhorMart" };
@@ -40,38 +228,86 @@ export async function generateMetadata({ params }) {
 
   return {
     title: `${category.name} | SakkhorMart`,
-    description: `Browse ${getCategoryProductCount(slug)} products in the ${category.name} category at SakkhorMart.`,
+    description: `Browse products in the ${category.name} category at SakkhorMart.`,
   };
 }
 
 export default async function Page({ params }) {
-  const { slug } = await params;
-  const category = getCategoryBySlug(slug);
+  const rawSlug = (await params)?.slug;
+  const slug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug;
+  const [categories, products] = await Promise.all([
+    loadCategories(),
+    loadProducts(),
+  ]);
+  const categoryMap = new Map(
+    categories.map((category) => [category.slug, category]),
+  );
+  const categoryChildrenMap = getCategoryChildrenMap(categories);
+  const category = getCategoryBySlug(slug, categoryMap);
 
   if (!category) {
     notFound();
   }
 
-  const categoryPath = getCategoryPath(slug);
-  const tree = buildCategoryTree();
-  const filteredProducts = sortProducts(
-    filterProducts(products, { category: slug }),
-    "newest",
+  const categoryPath = buildBreadcrumbFromCategory(category, categoryMap);
+  const data = applyCategoryCounts(
+    buildCategoryTree(categories),
+    categoryChildrenMap,
+    products,
   );
-  const productCount = getCategoryProductCount(slug);
+  const descendantSlugs = new Set(
+    getCategoryDescendantSlugs(slug, categoryChildrenMap),
+  );
+  const filteredProducts = sortByNewest(
+    products.filter((product) => {
+      const productCategorySlug = getProductCategorySlug(product);
+
+      return descendantSlugs.has(productCategorySlug);
+    }),
+  );
+  const productCount = filteredProducts.length;
+
+  const formatCurrency = (value) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(Number(value) || 0);
+
+  const getProductStock = (product) => {
+    if (typeof product?.stock === "number") {
+      return product.stock;
+    }
+
+    if (Array.isArray(product?.variants)) {
+      return product.variants.reduce(
+        (total, variant) => total + (Number(variant?.stock) || 0),
+        0,
+      );
+    }
+
+    return 0;
+  };
 
   return (
-    <PageContainer className="py-6 sm:py-8 lg:py-12">
+    <PageContainer>
       <section className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <CategoryTreeNav tree={tree} activeSlug={slug} title="Category tree" />
+        <CategoryNav
+          data={data}
+          activeSlug={slug}
+          activeSlugs={new Set(categoryPath.map((item) => item.slug))}
+        />
 
-        <div className="space-y-5">
+        <div className="space-y-5 mt-5">
           <div className="overflow-hidden rounded-4xl border border-slate-200 bg-white shadow-sm">
             <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
               <div className="space-y-4 p-6 sm:p-8">
                 <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                   {categoryPath.map((item, index) => (
-                    <span key={item.slug} className="flex items-center gap-2">
+                    <span
+                      key={`${item.slug}-${index}`}
+                      className="flex items-center gap-2"
+                    >
                       <Link
                         href={`/categories/${item.slug}`}
                         className="text-emerald-700 transition hover:text-emerald-600"
@@ -86,9 +322,6 @@ export default async function Page({ params }) {
                 </div>
 
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-700">
-                    SEO slug route
-                  </p>
                   <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
                     {category.name}
                   </h1>
@@ -99,38 +332,22 @@ export default async function Page({ params }) {
                   </p>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                      Product count
-                    </div>
-                    <div className="mt-1 text-2xl font-semibold text-slate-950">
-                      {productCount}
-                    </div>
+                <div className="flex items-center justify-between rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="text-xl font-semibold uppercase tracking-[0.2em] text-slate-500">
+                    Total Product
                   </div>
-                  <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                      Slug
-                    </div>
-                    <div className="mt-1 text-2xl font-semibold text-slate-950">
-                      /{slug}
-                    </div>
-                  </div>
-                  <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                      Visibility
-                    </div>
-                    <div className="mt-1 text-2xl font-semibold text-slate-950">
-                      Indexed
-                    </div>
+                  <div
+                    className={`text-xl pr-5 font-bold uppercase tracking-[0.2em] ${category.count ? "text-green-700" : "text-red-300"}`}
+                  >
+                    {productCount || 0}
                   </div>
                 </div>
               </div>
 
-              <div className="relative min-h-[18rem]">
+              <div className="relative min-h-72">
                 <Image
-                  src={category.thumbnail}
-                  alt={category.name}
+                  src={category?.thumbnail}
+                  alt={category?.name}
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 40vw"
@@ -153,14 +370,14 @@ export default async function Page({ params }) {
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {filteredProducts.map((product) => (
-              <article
-                key={product.sku}
+              <div
+                key={product.slug}
                 className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"
               >
                 <div className="relative aspect-4/3 overflow-hidden rounded-2xl bg-slate-100">
                   <Image
-                    src={product.image}
-                    alt={product.name}
+                    src={product.thumbnail}
+                    alt={product.title}
                     fill
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, 33vw"
@@ -170,21 +387,21 @@ export default async function Page({ params }) {
                 <div className="mt-4 flex items-start justify-between gap-3">
                   <div>
                     <h2 className="text-lg font-semibold text-slate-950">
-                      {product.name}
+                      {product.title}
                     </h2>
                     <p className="mt-1 text-sm text-slate-500">
-                      {product.brand}
+                      {product.brand || "Brand not listed"}
                     </p>
                   </div>
                   <div className="rounded-2xl bg-slate-950 px-3 py-2 text-sm font-semibold text-white">
-                    {currency(product.price)}
+                    {formatCurrency(product.price)}
                   </div>
                 </div>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
+                {/* <p className="mt-2 text-sm leading-6 text-slate-600">
                   {product.description}
-                </p>
+                </p> */}
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {product.tags.slice(0, 3).map((tag) => (
+                  {(product.tags || []).slice(0, 3).map((tag) => (
                     <span
                       key={tag}
                       className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500"
@@ -202,12 +419,12 @@ export default async function Page({ params }) {
                     <FiArrowRight size={14} />
                   </Link>
                   <span className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                    {product.stock > 0
-                      ? `${product.stock} in stock`
+                    {getProductStock(product) > 0
+                      ? `${getProductStock(product)} in stock`
                       : "Out of stock"}
                   </span>
                 </div>
-              </article>
+              </div>
             ))}
           </div>
 
