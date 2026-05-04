@@ -1,5 +1,6 @@
 import BannerSlider from "@/components/ecommerce/BannerSlider";
 import CategorySlider from "@/components/ecommerce/CategorySlider";
+import ProducrSlider from "@/components/ecommerce/ProductSlider";
 import PageContainer from "@/components/layout/PageContainer";
 
 export default function Home() {
@@ -9,6 +10,9 @@ export default function Home() {
       <BannerSlider />
       <div className="mt-5">
         <CategorySlider />
+      </div>
+      <div className="mt-5">
+        <ProducrSlider tittle="Trending Product" />
       </div>
     </PageContainer>
   );

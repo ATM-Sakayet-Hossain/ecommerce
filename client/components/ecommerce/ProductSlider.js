@@ -6,12 +6,12 @@ import {
   FaRegArrowAltCircleLeft,
   FaRegArrowAltCircleRight,
 } from "react-icons/fa";
-import CategoryCard from "../UI/CategoryCard";
+import ProductCard from "../UI/ProductCard";
 import { apiClient } from "@/lib/apiClient";
 
-const CategorySlider = () => {
+const ProducrSlider = ({ tittle }) => {
   const scrollRef = useRef(null);
-  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,26 +33,29 @@ const CategorySlider = () => {
   useEffect(() => {
     let isMounted = true;
 
-    const loadCategories = async () => {
+    const loadProducts = async () => {
       try {
         setIsLoading(true);
         setError("");
-        const payload = await apiClient.get("/category/get", {
+        const payload = await apiClient.get("/product/get", {
           revalidate: 60 * 5,
         });
 
-        const nextCategories =
-          payload?.data?.categories || payload?.categories || [];
+        const nextProducts =
+          payload?.data?.product ||
+          payload?.data?.products ||
+          payload?.product ||
+          [];
 
         if (isMounted) {
-          setCategories(nextCategories);
+          setProducts(nextProducts);
         }
       } catch (loadError) {
         if (isMounted) {
           setError(
             loadError instanceof Error
               ? loadError.message
-              : "Unable to load categories",
+              : "Unable to load products",
           );
         }
       } finally {
@@ -62,7 +65,7 @@ const CategorySlider = () => {
       }
     };
 
-    loadCategories();
+    loadProducts();
 
     return () => {
       isMounted = false;
@@ -77,7 +80,7 @@ const CategorySlider = () => {
     return () => {
       window.removeEventListener("resize", updateControls);
     };
-  }, [categories.length, updateControls]);
+  }, [products.length, updateControls]);
 
   const scrollByCard = (direction) => {
     const element = scrollRef.current;
@@ -118,27 +121,19 @@ const CategorySlider = () => {
     );
   }
 
-  if (!categories.length) {
+  if (!products.length) {
     return null;
   }
 
   return (
     <section>
       <div className="flex flex-wrap items-end justify-between gap-3 pt-2">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-700">
-            Category tree
-          </p>
-          <h2 className="mt-1 text-2xl font-semibold text-slate-950">
-            Featured Categories
-          </h2>
-        </div>
-
+        <h2 className="mt-1 text-2xl font-semibold text-slate-950">{tittle}</h2>
         <Link
-          href="/categories"
+          href="/shop"
           className="text-sm font-semibold text-emerald-700 transition hover:text-emerald-600"
         >
-          Open all categories
+          Open all Products
         </Link>
       </div>
 
@@ -148,14 +143,14 @@ const CategorySlider = () => {
           onScroll={updateControls}
           className="flex gap-3 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {categories.map((cat) => (
+          {products.map((product) => (
             <Link
-              key={cat?.slug}
-              href={`/categories/${cat?.slug}`}
+              key={product?.slug}
+              href={`/products/${product?.slug}`}
               data-slider-item
-              className="block min-w-0 shrink-0 basis-1/2 sm:basis-1/3 lg:basis-1/6"
+              className="block shrink-0 basis-1/2 sm:basis-1/4"
             >
-              <CategoryCard data={cat} />
+              <ProductCard data={product} />
             </Link>
           ))}
         </div>
@@ -165,7 +160,7 @@ const CategorySlider = () => {
             type="button"
             onClick={() => scrollByCard(-1)}
             disabled={!canScrollLeft}
-            aria-label="Previous category"
+            aria-label="Previous product"
             className="pointer-events-auto transition text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             <FaRegArrowAltCircleLeft size={30} />
@@ -175,7 +170,7 @@ const CategorySlider = () => {
             type="button"
             onClick={() => scrollByCard(1)}
             disabled={!canScrollRight}
-            aria-label="Next category"
+            aria-label="Next product"
             className="pointer-events-auto transition text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             <FaRegArrowAltCircleRight size={30} />
@@ -186,4 +181,4 @@ const CategorySlider = () => {
   );
 };
 
-export default CategorySlider;
+export default ProducrSlider;

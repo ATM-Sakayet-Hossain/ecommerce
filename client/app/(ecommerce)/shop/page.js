@@ -71,7 +71,7 @@ export default async function Page({ searchParams }) {
 
         <div className="space-y-5">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
               <FiSearch className="text-emerald-600" size={20} />
               <div className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
                 Query
@@ -80,7 +80,7 @@ export default async function Page({ searchParams }) {
                 {filters.query || "All products"}
               </div>
             </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
               <FiLayers className="text-emerald-600" size={20} />
               <div className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
                 Filters
@@ -89,7 +89,7 @@ export default async function Page({ searchParams }) {
                 {pagination.totalCount} matches
               </div>
             </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
               <FiStar className="text-emerald-600" size={20} />
               <div className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
                 Rating
@@ -98,7 +98,7 @@ export default async function Page({ searchParams }) {
                 {filters.rating ? `${filters.rating}+` : "Any"}
               </div>
             </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
               <FiClock className="text-emerald-600" size={20} />
               <div className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
                 Page
@@ -199,7 +199,7 @@ export default async function Page({ searchParams }) {
               ))}
             </div>
           ) : (
-            <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
+            <div className="rounded-4xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
               <FiSearch className="mx-auto text-slate-400" size={32} />
               <h2 className="mt-4 text-2xl font-semibold text-slate-950">
                 No products matched your filters
@@ -211,7 +211,7 @@ export default async function Page({ searchParams }) {
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-3 rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="text-sm text-slate-600">
               Showing {pagination.pageItems.length} of {pagination.totalCount}{" "}
               filtered products

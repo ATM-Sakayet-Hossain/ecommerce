@@ -16,11 +16,11 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
       extraOptions,
     );
     if (refreshResult.data) {
-      const accessToken = refreshResult.data.accessToken
-      api.dispatch(setCredentials({accessToken}))
+      const accessToken = refreshResult.data.accessToken;
+      api.dispatch(setCredentials({ accessToken }));
       result = await baseQuery(args, api, extraOptions);
-    }else{
-      api.dispatch(logout())
+    } else {
+      api.dispatch(logout());
     }
   }
   return result;
