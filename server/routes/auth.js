@@ -41,9 +41,9 @@ route.post("/refreshToken", refreshAccessToken);
 route.get("/getAuthStatus", authMiddleWare, getAuthStatus);
 route.post("/deactivateAccount", authMiddleWare, deactivateAccount);
 route.put(
-  "/userStatus",
+  "/admin/userStatus",
   authMiddleWare,
-  roleCheckMiddleware("admin"),
+  roleCheckMiddleware("admin", "editor"),
   userStatus,
 );
 route.get("/admin/users", authMiddleWare, roleCheckMiddleware("admin", "editor"), GetAllUsers);

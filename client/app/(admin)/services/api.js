@@ -1,10 +1,33 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+const baseQuery = fetchBaseQuery({
+  baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
+  credentials: "include",
+});
+const baseQueryWithReauth = async (args, api, extraOptions) => {
+  let result = await baseQuery(args, api, extraOptions);
+  if (result.error && result.error.status === 401) {
+    const refreshResult = await baseQuery(
+      {
+        url: "/auth/refreshToken",
+        method: "POST",
+      },
+      api,
+      extraOptions,
+    );
+    if (refreshResult.data) {
+      const accessToken = refreshResult.data.accessToken
+      api.dispatch(setCredentials({accessToken}))
+      result = await baseQuery(args, api, extraOptions);
+    }else{
+      api.dispatch(logout())
+    }
+  }
+  return result;
+};
+
 export const adminApiService = createApi({
-  baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
-    credentials: "include",
-  }),
+  baseQuery: baseQueryWithReauth,
   endpoints: (build) => ({
     getCategories: build.query({
       query: () => "/category/get",
@@ -87,6 +110,19 @@ export const adminApiService = createApi({
         body,
       }),
     }),
+    getAllUsers: build.query({
+      query: (params = {}) => ({
+        url: "/auth/admin/users",
+        params,
+      }),
+    }),
+    userStatus: build.mutation({
+      query: (body) => ({
+        url: "/auth/admin/userStatus",
+        method: "PUT",
+        body,
+      }),
+    }),
   }),
 });
 
@@ -104,4 +140,6 @@ export const {
   useGetBannerBySlugQuery,
   useCreateBannerMutation,
   useUpdateBannerMutation,
+  useGetAllUsersQuery,
+  useUserStatusMutation,
 } = adminApiService;

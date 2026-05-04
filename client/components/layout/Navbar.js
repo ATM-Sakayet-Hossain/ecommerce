@@ -7,11 +7,7 @@ import { FiAlignJustify, FiX } from "react-icons/fi";
 import { usePathname } from "next/navigation";
 import { decodeJwt } from "jose";
 
-const baseNavLinks = [
-  { label: "Home", href: "/" },
-  { label: "Shop", href: "/shop" },
-  { label: "Categories", href: "/categories" },
-];
+const baseNavLinks = [{ label: "Shop", href: "/shop" }];
 
 const authCookieName = "X-AS-Token";
 
@@ -19,11 +15,9 @@ const getCookieValue = (name) => {
   if (typeof document === "undefined") {
     return "";
   }
-
   const cookie = document.cookie
     .split("; ")
     .find((item) => item.startsWith(`${name}=`));
-
   return cookie ? cookie.slice(name.length + 1) : "";
 };
 
@@ -38,15 +32,12 @@ const Navbar = () => {
   useEffect(() => {
     const frameId = window.requestAnimationFrame(() => {
       const token = getCookieValue(authCookieName);
-
       if (!token) {
         setAuthState({ isLoggedIn: false, isAdmin: false });
         return;
       }
-
       try {
         const decodedToken = decodeJwt(token);
-
         setAuthState({
           isLoggedIn: true,
           isAdmin: decodedToken.role === "admin",
@@ -55,19 +46,13 @@ const Navbar = () => {
         setAuthState({ isLoggedIn: false, isAdmin: false });
       }
     });
-
     return () => window.cancelAnimationFrame(frameId);
   }, [pathname]);
-
-  const navLinks = authState.isAdmin
-    ? [...baseNavLinks, { label: "Dashboard", href: "/admin/dashboard" }]
-    : baseNavLinks;
 
   const isActivePath = (href) => {
     if (href === "/") {
       return pathname === "/";
     }
-
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
@@ -75,58 +60,39 @@ const Navbar = () => {
   return (
     <header className="sticky top-0 z-50 border-b border-emerald-100/80 bg-linear-to-r from-emerald-50 via-white to-cyan-50 backdrop-blur-xl shadow-[0_1px_0_rgba(15,23,42,0.04)]">
       <PageContainer className="py-3 sm:py-4">
-        <div className="flex items-center justify-between gap-4 lg:gap-6">
-          <Link
-            href="/"
-            className="flex shrink-0 items-center gap-2 group"
-            onClick={closeMenu}
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-emerald-500 via-teal-500 to-cyan-500 shadow-md transition-transform duration-200 group-hover:scale-105">
-              <span className="text-sm font-bold text-white">S</span>
-            </div>
-            <span className="hidden sm:inline text-lg font-bold tracking-tight text-slate-900">
-              Sakkhor<span className="text-emerald-600">Mart</span>
-            </span>
-          </Link>
-
-          <form action="/shop" className="hidden xl:block flex-1 max-w-xl">
-            <div className="flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 pl-4 transition-all focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-emerald-100">
-              <LuSearch size={18} className="shrink-0 text-slate-400" />
-              <input
-                type="search"
-                name="query"
-                placeholder="Search products, brands, categories"
-                className="h-full w-full border-0 bg-transparent px-1 text-sm outline-none placeholder:text-slate-400"
-              />
-              <button
-                type="submit"
-                className="h-11 rounded-r-2xl bg-linear-to-br from-emerald-500 via-teal-500 px-5 to-cyan-500 text-sm font-semibold text-white transition-colors hover:bg-emerald-600"
-              >
-                Search
-              </button>
-            </div>
-          </form>
-
-          <nav className="hidden lg:flex items-center gap-1">
-            {navLinks.map((link) => {
-              const isActive = isActivePath(link.href);
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-emerald-50 text-emerald-700"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
-                  onClick={closeMenu}
+        <div className="flex items-center justify-between">
+          <div className="grid grid-cols-4 gap-6">
+            <Link
+              href="/"
+              className="flex shrink-0 items-center gap-2 group"
+              onClick={closeMenu}
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-emerald-500 via-teal-500 to-cyan-500 shadow-md transition-transform duration-200 group-hover:scale-105">
+                <span className="text-sm font-bold text-white">S</span>
+              </div>
+              <span className="hidden sm:inline text-lg font-bold tracking-tight text-slate-900">
+                Sakkhor<span className="text-emerald-600">Mart</span>
+              </span>
+            </Link>
+            <form action="/shop" className="hidden xl:block flex-1 col-span-3 max-w-xl">
+              <div className="flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 pl-4 transition-all focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-emerald-100">
+                <LuSearch size={18} className="shrink-0 text-slate-400" />
+                <input
+                  type="search"
+                  name="query"
+                  placeholder="Search products, brands, categories"
+                  className="h-full w-full border-0 bg-transparent px-1 text-sm outline-none placeholder:text-slate-400"
+                />
+                <button
+                  type="submit"
+                  className="h-11 rounded-r-2xl bg-linear-to-br from-emerald-500 via-teal-500 px-5 to-cyan-500 text-sm font-semibold text-white transition-colors hover:bg-emerald-600"
                 >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
-          <div className="flex items-center gap-2 sm:gap-3">
+                  Search
+                </button>
+              </div>
+            </form>
+          </div>
+          <div className="flex items-center col-span-3 gap-2 sm:gap-3">
             <Link
               href="/cart"
               className="relative hidden sm:inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 hover:text-emerald-600"
@@ -135,15 +101,6 @@ const Navbar = () => {
               <LuShoppingCart size={20} />
               <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white"></span>
             </Link>
-
-            <Link
-              href="/profile"
-              className="hidden sm:inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 hover:text-emerald-600"
-              title="Account"
-            >
-              <LuUser size={20} />
-            </Link>
-
             {!authState.isLoggedIn ? (
               <Link
                 href="/login"
@@ -151,7 +108,15 @@ const Navbar = () => {
               >
                 Sign In
               </Link>
-            ) : null}
+            ) : (
+              <Link
+                href="/profile"
+                className="hidden sm:inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 hover:text-emerald-600"
+                title="Account"
+              >
+                <LuUser size={20} />
+              </Link>
+            )}
 
             <button
               type="button"
@@ -165,7 +130,6 @@ const Navbar = () => {
             </button>
           </div>
         </div>
-
         {isMenuOpen ? (
           <div
             id="mobile-navigation"
@@ -183,7 +147,7 @@ const Navbar = () => {
               </div>
             </form>
 
-            <nav className="grid gap-2">
+            {/* <nav className="grid gap-2">
               {navLinks.map((link) => {
                 const isActive = isActivePath(link.href);
                 return (
@@ -201,7 +165,7 @@ const Navbar = () => {
                   </Link>
                 );
               })}
-            </nav>
+            </nav> */}
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <Link
@@ -212,14 +176,6 @@ const Navbar = () => {
                 <LuShoppingCart size={18} />
                 Cart
               </Link>
-              <Link
-                href="/profile"
-                onClick={closeMenu}
-                className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-emerald-200 hover:text-emerald-600"
-              >
-                <LuUser size={18} />
-                Account
-              </Link>
               {!authState.isLoggedIn ? (
                 <Link
                   href="/login"
@@ -228,7 +184,16 @@ const Navbar = () => {
                 >
                   Sign In
                 </Link>
-              ) : null}
+              ) : (
+                <Link
+                  href="/profile"
+                  onClick={closeMenu}
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-emerald-200 hover:text-emerald-600"
+                >
+                  <LuUser size={18} />
+                  Account
+                </Link>
+              )}
             </div>
           </div>
         ) : null}

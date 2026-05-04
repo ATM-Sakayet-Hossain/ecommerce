@@ -370,17 +370,20 @@ const updateUserProfile = async (req, res) => {
       .select(
         "-password -otp -otpExpires -resetPassToken -resetExpires -updatedAt",
       );
+    if (!user) return responseHandler.error(res, 400, "Invalid Request");
     if (avatar) {
-      const imgPublicId = user.avatar.split("/").pop().split(".")[0];
-      deleteFromCloudinary(`avatar/${imgPublicId}`);
+      if (user.avatar) {
+        const imgPublicId = user.avatar.split("/").pop().split(".")[0];
+        deleteFromCloudinary(`avatar/${imgPublicId}`);
+      }
       const imgRes = await uploadToCloudinary(avatar, "avatar");
       user.avatar = imgRes.secure_url;
     }
     if (fullName) user.fullName = fullName;
     if (phone) user.phone = phone;
     if (address) user.address = address;
-    user.save();
-    responseHandler.success(res, 200, "user Update successfully");
+    await user.save();
+    responseHandler.success(res, 200, user, "User updated successfully");
   } catch (error) {
     responseHandler.error(
       res,
@@ -427,9 +430,8 @@ const getAuthStatus = async (req, res) => {
   }
 };
 const deactivateAccount = async (req, res) => {
-  const { email } = req.body;
-  const user = await userSchema.findOne({ email });
   try {
+    const user = await userSchema.findById(req.user._id);
     if (!user) return responseHandler.error(res, 404, "user not Found");
     if (user.status === "inactive")
       return responseHandler.error(res, 404, "Account already deactivated");
@@ -452,13 +454,89 @@ const deactivateAccount = async (req, res) => {
   }
 };
 const userStatus = async (req, res) => {
-  const { email } = req.body;
+  const { email, status, role } = req.body;
   try {
     const user = await userSchema.findOne({ email });
     if (!user) return responseHandler.error(res, 400, "user not found");
-    user.status = user.status === "active" ? "banned" : "active";
+    if (status !== undefined) {
+      if (!["active", "banned"].includes(status)) {
+        return responseHandler.error(
+          res,
+          400,
+          "Status must be active or banned",
+        );
+      }
+      user.status = status;
+    }
+    if (role !== undefined) {
+      if (String(req.user?._id) === String(user._id)) {
+        return responseHandler.error(
+          res,
+          400,
+          "You cannot modify your own role",
+        );
+      }
+
+      const actorRole = req.user?.role;
+      if (actorRole === "editor") {
+        if (user.role === "admin") {
+          return responseHandler.error(
+            res,
+            400,
+            "Editors cannot change admin roles",
+          );
+        }
+        if (!["user", "editor"].includes(role)) {
+          return responseHandler.error(
+            res,
+            400,
+            "Editors can only switch between user and editor",
+          );
+        }
+        if (user.role === role) {
+          return responseHandler.error(res, 400, "User already has this role");
+        }
+        if (user.role === "user" && role !== "editor") {
+          return responseHandler.error(
+            res,
+            400,
+            "User role can only be changed to editor",
+          );
+        }
+        if (user.role === "editor" && role !== "user") {
+          return responseHandler.error(
+            res,
+            400,
+            "Editor role can only be changed to user",
+          );
+        }
+      } else if (actorRole === "admin") {
+        if (!["user", "editor", "admin"].includes(role)) {
+          return responseHandler.error(
+            res,
+            400,
+            "Role must be user, editor, or admin",
+          );
+        }
+
+        if (user.role === role) {
+          return responseHandler.error(res, 400, "User already has this role");
+        }
+      } else {
+        return responseHandler.error(res, 400, "Role update not allowed");
+      }
+
+      user.role = role;
+    }
+    if (status === undefined && role === undefined) {
+      return responseHandler.error(
+        res,
+        400,
+        "Please provide status or role to update",
+      );
+    }
     await user.save();
-    responseHandler.success(res, 200, `user ${user.status} successfully`);
+    responseHandler.success(res, 200, user, "User updated successfully");
   } catch (error) {
     responseHandler.error(
       res,

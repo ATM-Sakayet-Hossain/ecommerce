@@ -43,31 +43,10 @@ const adminMenuItems = [
     ],
   },
   {
-    title: "Customers",
-    subItems: [
-      { title: "Customers", to: "/customers" },
-      { title: "Customers Details", to: "/customers/CUS-401" },
-    ],
-  },
-  {
-    title: "Employees",
-    subItems: [
-      { title: "Employees", to: "/employees" },
-      { title: "Employees Details", to: "/employees/:id" },
-    ],
-  },
-  {
     title: "Banner",
     subItems: [
       { title: "Banner", to: "/admin/banner/createBanner" },
       { title: "All Banner", to: "/admin/banner/allBanner" },
-    ],
-  },
-  {
-    title: "Profile",
-    subItems: [
-      { title: "Profile", to: "/profile" },
-      { title: "Profile Details", to: "/profile/USR-01/edit" },
     ],
   },
   {
@@ -82,6 +61,26 @@ const adminMenuItems = [
     subItems: [
       { title: "Accounts", to: "/accounts" },
       { title: "Account Details", to: "/accounts/ACC-311" },
+    ],
+  },
+  {
+    title: "Customers",
+    subItems: [
+      { title: "Customers", to: "/customers" },
+      { title: "Customers Details", to: "/customers/CUS-401" },
+    ],
+  },
+  {
+    title: "Employees",
+    subItems: [
+      { title: "Employees", to: "/employees" },
+      { title: "Employees Details", to: "/employees/:id" },
+    ],
+  },
+  {
+    title: "Profile",
+    subItems: [
+      { title: "All User", to: "/admin/profile" },
     ],
   },
 ];
