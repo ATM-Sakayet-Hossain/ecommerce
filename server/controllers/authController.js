@@ -181,7 +181,7 @@ const login = async (req, res) => {
     res.cookie("X-RF-Token", refToken, {
       httpOnly: false, // Not accessible by client-side JS
       secure: false, // Only sent over HTTPS
-      maxAge: 1296000000, // Expires in 1 hour (in milliseconds)
+      maxAge: 1296000000, // Expires in 15 day (in milliseconds)
       // sameSite: 'Strict' // Only send for same-site requests
     });
     responseHandler.success(res, 200, "Welcome, your login was successful.");

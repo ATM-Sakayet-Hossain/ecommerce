@@ -14,6 +14,9 @@ export default function Home() {
       <div className="mt-5">
         <ProducrSlider tittle="Trending Product" />
       </div>
+      <div className="mt-5">
+        <ProducrSlider tittle="Trending Product" />
+      </div>
     </PageContainer>
   );
 }

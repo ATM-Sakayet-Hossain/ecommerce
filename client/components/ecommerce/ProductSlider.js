@@ -137,7 +137,7 @@ const ProducrSlider = ({ tittle }) => {
         </Link>
       </div>
 
-      <div className="relative mt-2 rounded-3xl bg-slate-50/80">
+      <div className="relative mt-2 rounded-3xl">
         <div
           ref={scrollRef}
           onScroll={updateControls}
