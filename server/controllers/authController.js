@@ -20,6 +20,11 @@ const {
   uploadToCloudinary,
 } = require("../services/cloudinaryService");
 const { responseHandler } = require("../Utils/responseHandler");
+const {
+  getLoginLockMessage,
+  isLoginLocked,
+  registerLoginFailure,
+} = require("../middleware/rateLimiters");
 
 const registration = async (req, res) => {
   try {
@@ -163,13 +168,42 @@ const login = async (req, res) => {
         400,
         "Account is banned. Please Contract your Admin or IT Support",
       );
+    if (isLoginLocked(user)) {
+      const lockUntil = new Date(user.loginLockUntil).getTime();
+      const remainingMinutes = Math.max(
+        1,
+        Math.ceil((lockUntil - Date.now()) / 60000),
+      );
+
+      return responseHandler.error(
+        res,
+        429,
+        `Too many failed login attempts. Try again in ${remainingMinutes} minute${remainingMinutes === 1 ? "" : "s"}.`,
+      );
+    }
     const isMatch = await user.comparePassword(password);
-    if (!isMatch)
+    if (!isMatch) {
+      const failureState = await registerLoginFailure(user);
+
+      if (failureState.locked) {
+        return responseHandler.error(
+          res,
+          429,
+          getLoginLockMessage(failureState.lockDuration),
+        );
+      }
+
       return responseHandler.error(res, 401, "Email or Password is invalid");
+    }
     if (user.status === "inactive") {
       user.status = "active";
-      await user.save();
     }
+    if (user.loginFailedAttempts || user.loginLockUntil || user.loginLockStage) {
+      user.loginFailedAttempts = 0;
+      user.loginLockUntil = null;
+      user.loginLockStage = 0;
+    }
+    await user.save();
     const accToken = generateAccessToken(user);
     const refToken = generateRefreshToken(user);
     res.cookie("X-AS-Token", accToken, {

@@ -7,16 +7,13 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { toast } from "react-toastify";
 import { useUpdateBannerMutation } from "@/app/(admin)/services/api";
+import { formatDateTimeLocalValue } from "@/lib/dateTime";
 
 const buildInitialFormData = (banner) => ({
   title: banner?.title || "",
   subtitle: banner?.subtitle || "",
-  startDate: banner?.startDate
-    ? new Date(banner.startDate).toISOString().slice(0, 16)
-    : "",
-  endDate: banner?.endDate
-    ? new Date(banner.endDate).toISOString().slice(0, 16)
-    : "",
+  startDate: formatDateTimeLocalValue(banner?.startDate),
+  endDate: formatDateTimeLocalValue(banner?.endDate),
   isActive: String(banner?.isActive !== false),
   image: null,
 });

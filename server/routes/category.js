@@ -8,6 +8,7 @@ const {
 } = require("../controllers/categoryController");
 const authMiddleWare = require("../middleware/authMiddleWare");
 const roleCheckMiddleware = require("../middleware/roleCheckMiddleware");
+const { activityLogger } = require("../middleware/activityLogger");
 const upload = multer();
 const route = express.Router();
 
@@ -15,6 +16,11 @@ route.post(
   "/create",
   authMiddleWare,
   roleCheckMiddleware("admin", "editor"),
+  activityLogger({
+    action: "CREATE_CATEGORY",
+    entityType: "Category",
+    getEntityName: (req) => req.body.name,
+  }),
   upload.single("thumbnail"),
   createCategory,
 );
@@ -36,6 +42,11 @@ route.put(
   "/update/:slug",
   authMiddleWare,
   roleCheckMiddleware("admin", "editor"),
+  activityLogger({
+    action: "UPDATE_CATEGORY",
+    entityType: "Category",
+    getEntityName: (req) => req.params.slug,
+  }),
   upload.single("thumbnail"),
   updateCategory,
 );

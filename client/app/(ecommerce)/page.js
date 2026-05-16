@@ -12,10 +12,10 @@ export default function Home() {
         <CategorySlider />
       </div>
       <div className="mt-5">
-        <ProducrSlider tittle="Trending Product" />
+        <ProducrSlider tittle="Best Selling" />
       </div>
       <div className="mt-5">
-        <ProducrSlider tittle="Trending Product" />
+        <ProducrSlider tittle="All Product" />
       </div>
     </PageContainer>
   );

@@ -6,6 +6,7 @@ const CategoryRoute = require("./category")
 const cartRoute = require("./cart")
 const orderRoute = require("./order");
 const bannerRoute = require("./banner");
+const activityLogRoute = require("./activityLog");
 const authMiddleWare = require("../middleware/authMiddleWare");
 
 route.get("/", (req, res) => {
@@ -17,6 +18,7 @@ route.use("/category", CategoryRoute);
 route.use("/product", productRoute);
 route.use("/cart", authMiddleWare, cartRoute);
 route.use("/banner", bannerRoute);
+route.use("/activity-logs", activityLogRoute);
 route.use(authMiddleWare, orderRoute);
 
 

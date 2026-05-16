@@ -7,6 +7,9 @@ import { FiArrowRight, FiStar } from "react-icons/fi";
 
 export const dynamic = "force-dynamic";
 
+const API_BASE_URL =
+  process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_BASE_URL;
+
 function normalizeParent(parent) {
   if (!parent || parent === "null") {
     return null;
@@ -175,7 +178,7 @@ function buildBreadcrumbFromCategory(category, categoryMap) {
 
 async function loadCategories() {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/category/get?page=1&limit=1000&sortBy=sortOrder&order=asc`,
+    `${API_BASE_URL}/category/get?page=1&limit=1000&sortBy=sortOrder&order=asc`,
     { cache: "no-store" },
   );
 
@@ -190,7 +193,7 @@ async function loadCategories() {
 
 async function loadProducts() {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/product/get`,
+    `${API_BASE_URL}/product/get`,
     {
       cache: "no-store",
       next: { revalidate: 0 },
@@ -208,10 +211,10 @@ async function loadProducts() {
   );
 }
 
-export async function generateStaticParams() {
-  const categories = await loadCategories();
-  return flattenRoutes(buildCategoryTree(categories));
-}
+// export async function generateStaticParams() {
+//   const categories = await loadCategories();
+//   return flattenRoutes(buildCategoryTree(categories));
+// }
 
 export async function generateMetadata({ params }) {
   const rawSlug = (await params)?.slug;

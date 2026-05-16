@@ -8,16 +8,21 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { useGetBannerQuery } from "@/app/(admin)/services/api";
+import { formatDateTimeLocalValue } from "@/lib/dateTime";
 
 const formatDate = (value) => {
   if (!value) {
     return "-";
   }
-
-  const date = new Date(value);
+  const localValue = formatDateTimeLocalValue(value);
+  if (!localValue) {
+    return "-";
+  }
+  const date = new Date(`${localValue}:00+06:00`);
   return Number.isNaN(date.getTime())
     ? "-"
     : new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Dhaka",
         dateStyle: "medium",
         timeStyle: "short",
       }).format(date);

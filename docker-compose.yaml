@@ -1,0 +1,76 @@
+version: "3.8"
+
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+
+    container_name: ecommerce_server
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+
+    env_file:
+      - ./server/.env
+      - ./server/.env.docker
+
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+    command: npm run dev
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+
+    container_name: ecommerce_client
+
+    ports:
+      - "3000:3000"
+
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+
+    env_file:
+      - ./client/.env
+
+    depends_on:
+      - server
+
+    command: npm run dev
+
+  mongo:
+    image: mongo:latest
+
+    container_name: ecommerce_mongodb
+
+    ports:
+      - "27017:27017"
+
+    env_file:
+      - ./server/.env.docker
+
+    volumes:
+      - mongo-data:/data/db
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'mongosh --quiet --username admin --password password --authenticationDatabase admin --eval "db.adminCommand({ ping: 1 })"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  mongo-data:

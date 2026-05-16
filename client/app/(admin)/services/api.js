@@ -110,6 +110,12 @@ export const adminApiService = createApi({
         body,
       }),
     }),
+    getActivityLogs: build.query({
+      query: (params = {}) => ({
+        url: "/activity-logs/admin/get",
+        params,
+      }),
+    }),
     getAllUsers: build.query({
       query: (params = {}) => ({
         url: "/auth/admin/users",
@@ -140,6 +146,7 @@ export const {
   useGetBannerBySlugQuery,
   useCreateBannerMutation,
   useUpdateBannerMutation,
+  useGetActivityLogsQuery,
   useGetAllUsersQuery,
   useUserStatusMutation,
 } = adminApiService;

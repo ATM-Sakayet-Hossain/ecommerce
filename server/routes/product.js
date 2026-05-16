@@ -1,6 +1,7 @@
 const express = require("express");
 const authMiddleWare = require("../middleware/authMiddleWare");
 const roleCheckMiddleware = require("../middleware/roleCheckMiddleware");
+const { activityLogger } = require("../middleware/activityLogger");
 const multer = require("multer");
 const {
   createProduct,
@@ -16,6 +17,11 @@ route.post(
   "/createProduct",
   authMiddleWare,
   roleCheckMiddleware("admin", "editor"),
+  activityLogger({
+    action: "CREATE_PRODUCT",
+    entityType: "Product",
+    getEntityName: (req) => req.body.title,
+  }),
   upload.fields([
     { name: "thumbnail", maxCount: 1 },
     { name: "images", maxCount: 4 },
@@ -35,6 +41,11 @@ route.put(
   "/update/:slug",
   authMiddleWare,
   roleCheckMiddleware("admin", "editor"),
+  activityLogger({
+    action: "UPDATE_PRODUCT",
+    entityType: "Product",
+    getEntityName: (req) => req.params.slug,
+  }),
   upload.fields([
     { name: "thumbnail", maxCount: 1 },
     { name: "images", maxCount: 4 },

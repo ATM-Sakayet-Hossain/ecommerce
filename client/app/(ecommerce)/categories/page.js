@@ -2,6 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import PageContainer from "@/components/layout/PageContainer";
 
+const API_BASE_URL =
+  process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_BASE_URL;
+
 export const metadata = {
   title: "Categories | SakkhorMart",
   description:
@@ -25,7 +28,7 @@ function getFeaturedCategories(categories, limit = 6) {
 
 export default async function Page() {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/category/get`,
+    `${API_BASE_URL}/category/get`,
     {
       cache: "no-store",
     },

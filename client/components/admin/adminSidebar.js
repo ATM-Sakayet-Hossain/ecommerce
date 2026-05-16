@@ -8,6 +8,10 @@ const adminMenuItems = [
     subItems: [{ title: "Dashboard", to: "/admin/dashboard" }],
   },
   {
+    title: "Activity Logs",
+    subItems: [{ title: "Activity Logs", to: "/admin/activity-logs" }],
+  },
+  {
     title: "Product",
     subItems: [
       { title: "Add Product", to: "/admin/products/createProduct" },
