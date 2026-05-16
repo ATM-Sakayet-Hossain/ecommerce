@@ -11,7 +11,6 @@ const {
 } = require("../controllers/ProductController");
 const route = express.Router();
 const upload = multer();
-const reviewRoute = require("./review");
 
 route.post(
   "/createProduct",
@@ -52,9 +51,6 @@ route.put(
   ]),
   updateProduct,
 );
-
-// review route
-route.post("/:slug", reviewRoute)
 
 route.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {

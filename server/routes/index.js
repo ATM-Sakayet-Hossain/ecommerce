@@ -7,6 +7,7 @@ const cartRoute = require("./cart")
 const orderRoute = require("./order");
 const bannerRoute = require("./banner");
 const activityLogRoute = require("./activityLog");
+const reviewRoute = require("./review");
 const authMiddleWare = require("../middleware/authMiddleWare");
 
 route.get("/", (req, res) => {
@@ -18,6 +19,7 @@ route.use("/category", CategoryRoute);
 route.use("/product", productRoute);
 route.use("/cart", authMiddleWare, cartRoute);
 route.use("/banner", bannerRoute);
+route.use("/review", reviewRoute);
 route.use("/activity-logs", activityLogRoute);
 route.use(authMiddleWare, orderRoute);
 

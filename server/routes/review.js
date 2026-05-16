@@ -1,9 +1,9 @@
 const express = require("express");
-const { createReview } = require("../controllers/reviewController");
+const { createReview, getReviews } = require("../controllers/reviewController");
 const authMiddleWare = require("../middleware/authMiddleWare");
 const route = express.Router();
 
-route.post("/reviews", authMiddleWare, createReview)
-
+route.get("/get", getReviews);
+route.post("/:slug", authMiddleWare, createReview);
 
 module.exports = route;
