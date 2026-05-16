@@ -7,23 +7,20 @@ import { FiArrowRight, FiStar } from "react-icons/fi";
 
 export const dynamic = "force-dynamic";
 
-const API_BASE_URL =
-  process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_BASE_URL;
+// const API_BASE_URL = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_BASE_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 function normalizeParent(parent) {
   if (!parent || parent === "null") {
     return null;
   }
-
   return typeof parent === "string"
     ? parent
     : (parent?._id ?? parent?.slug ?? null);
 }
-
 function getCategoryKey(category) {
   return category?.slug ?? null;
 }
-
 function getParentCategoryKey(category) {
   return (
     category?.parentData?.slug ??
@@ -47,10 +44,8 @@ function buildCategoryTree(categories) {
   );
 
   const roots = [];
-
   nodeMap.forEach((node) => {
     const parentKey = normalizeParent(node.parent);
-
     if (parentKey && nodeMap.has(parentKey)) {
       nodeMap.get(parentKey).children.push(node);
     } else {
@@ -65,12 +60,9 @@ function buildCategoryTree(categories) {
         ? orderDelta
         : left.name.localeCompare(right.name);
     });
-
     nodes.forEach((node) => sortNodes(node.children));
   };
-
   sortNodes(roots);
-
   return roots;
 }
 
@@ -87,18 +79,15 @@ function flattenRoutes(nodes, routes = []) {
       flattenRoutes(node.children, routes);
     }
   });
-
   return routes;
 }
 
 function getCategoryChildrenMap(categories) {
   return categories.reduce((map, category) => {
     const parentKey = getParentCategoryKey(category);
-
     if (!parentKey) {
       return map;
     }
-
     const children = map.get(parentKey) ?? [];
     children.push(category);
     map.set(parentKey, children);
@@ -108,13 +97,11 @@ function getCategoryChildrenMap(categories) {
 function getCategoryDescendantSlugs(slug, categoryChildrenMap) {
   const branch = [];
   const stack = [slug];
-
   while (stack.length) {
     const current = stack.pop();
     if (!current) {
       continue;
     }
-
     branch.push(current);
     const children = categoryChildrenMap.get(current) ?? [];
     children.forEach((child) => stack.push(child.slug));
@@ -136,7 +123,6 @@ function countProductsForSlug(slug, categoryChildrenMap, products) {
   const descendantSlugs = new Set(
     getCategoryDescendantSlugs(slug, categoryChildrenMap),
   );
-
   return products.filter((product) =>
     descendantSlugs.has(getProductCategorySlug(product)),
   ).length;
@@ -163,16 +149,12 @@ function buildBreadcrumbFromCategory(category, categoryMap) {
       slug: current.slug,
       name: current.name,
     });
-
     const parentSlug = getParentCategoryKey(current);
-
     if (!parentSlug) {
       break;
     }
-
     current = categoryMap.get(parentSlug) ?? current.parent ?? null;
   }
-
   return trail;
 }
 
@@ -181,13 +163,10 @@ async function loadCategories() {
     `${API_BASE_URL}/category/get?page=1&limit=1000&sortBy=sortOrder&order=asc`,
     { cache: "no-store" },
   );
-
   if (!response.ok) {
     throw new Error("Unable to load categories");
   }
-
   const payload = await response.json();
-
   return payload?.data?.categories || payload?.categories || [];
 }
 
@@ -199,22 +178,14 @@ async function loadProducts() {
       next: { revalidate: 0 },
     },
   );
-
   if (!response.ok) {
     throw new Error("Unable to load products");
   }
-
   const payload = await response.json();
-
   return (
     payload?.data?.product || payload?.data?.products || payload?.product || []
   );
 }
-
-// export async function generateStaticParams() {
-//   const categories = await loadCategories();
-//   return flattenRoutes(buildCategoryTree(categories));
-// }
 
 export async function generateMetadata({ params }) {
   const rawSlug = (await params)?.slug;
@@ -224,17 +195,14 @@ export async function generateMetadata({ params }) {
     categories.map((category) => [category.slug, category]),
   );
   const category = getCategoryBySlug(slug, categoryMap);
-
   if (!category) {
     return { title: "Category not found | SakkhorMart" };
   }
-
   return {
     title: `${category.name} | SakkhorMart`,
     description: `Browse products in the ${category.name} category at SakkhorMart.`,
   };
 }
-
 export default async function Page({ params }) {
   const rawSlug = (await params)?.slug;
   const slug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug;
@@ -247,11 +215,9 @@ export default async function Page({ params }) {
   );
   const categoryChildrenMap = getCategoryChildrenMap(categories);
   const category = getCategoryBySlug(slug, categoryMap);
-
   if (!category) {
     notFound();
   }
-
   const categoryPath = buildBreadcrumbFromCategory(category, categoryMap);
   const data = applyCategoryCounts(
     buildCategoryTree(categories),
@@ -269,19 +235,16 @@ export default async function Page({ params }) {
     }),
   );
   const productCount = filteredProducts.length;
-
   const formatCurrency = (value) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
       maximumFractionDigits: 0,
     }).format(Number(value) || 0);
-
   const getProductStock = (product) => {
     if (typeof product?.stock === "number") {
       return product.stock;
     }
-
     if (Array.isArray(product?.variants)) {
       return product.variants.reduce(
         (total, variant) => total + (Number(variant?.stock) || 0),

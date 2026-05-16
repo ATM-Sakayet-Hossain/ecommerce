@@ -49,7 +49,7 @@ const adminMenuItems = [
   {
     title: "Banner",
     subItems: [
-      { title: "Banner", to: "/admin/banner/createBanner" },
+      { title: "Add Banner", to: "/admin/banner/createBanner" },
       { title: "All Banner", to: "/admin/banner/allBanner" },
     ],
   },

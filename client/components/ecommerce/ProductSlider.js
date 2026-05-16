@@ -19,11 +19,9 @@ const ProducrSlider = ({ tittle }) => {
 
   const updateControls = useCallback(() => {
     const element = scrollRef.current;
-
     if (!element) {
       return;
     }
-
     setCanScrollLeft(element.scrollLeft > 0);
     setCanScrollRight(
       element.scrollLeft + element.clientWidth < element.scrollWidth - 1,
@@ -32,7 +30,6 @@ const ProducrSlider = ({ tittle }) => {
 
   useEffect(() => {
     let isMounted = true;
-
     const loadProducts = async () => {
       try {
         setIsLoading(true);
@@ -40,13 +37,11 @@ const ProducrSlider = ({ tittle }) => {
         const payload = await apiClient.get("/product/get", {
           revalidate: 60 * 5,
         });
-
         const nextProducts =
           payload?.data?.product ||
           payload?.data?.products ||
           payload?.product ||
           [];
-
         if (isMounted) {
           setProducts(nextProducts);
         }
@@ -64,9 +59,7 @@ const ProducrSlider = ({ tittle }) => {
         }
       }
     };
-
     loadProducts();
-
     return () => {
       isMounted = false;
     };
@@ -74,9 +67,7 @@ const ProducrSlider = ({ tittle }) => {
 
   useEffect(() => {
     updateControls();
-
     window.addEventListener("resize", updateControls);
-
     return () => {
       window.removeEventListener("resize", updateControls);
     };
@@ -84,17 +75,14 @@ const ProducrSlider = ({ tittle }) => {
 
   const scrollByCard = (direction) => {
     const element = scrollRef.current;
-
     if (!element) {
       return;
     }
-
     const card = element.querySelector("[data-slider-item]");
     const cardWidth =
       card?.getBoundingClientRect().width ?? element.clientWidth;
     const styles = window.getComputedStyle(element);
     const gap = Number.parseFloat(styles.columnGap || styles.gap || "0");
-
     element.scrollBy({
       left: direction * (cardWidth + gap),
       behavior: "smooth",

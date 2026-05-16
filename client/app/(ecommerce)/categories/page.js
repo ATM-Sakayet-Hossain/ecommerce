@@ -37,7 +37,7 @@ export default async function Page() {
   if (!response.ok) {
     throw new Error("Unable to load categories");
   }
-
+console.log(response)
   const payload = await response.json();
   const categories = payload?.data?.categories || payload?.categories || [];
   const featuredCategories = getFeaturedCategories(categories, 9);
