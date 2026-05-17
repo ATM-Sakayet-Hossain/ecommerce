@@ -134,7 +134,7 @@ const ProducrSlider = ({ tittle }) => {
           {products.map((product) => (
             <Link
               key={product?.slug}
-              href={`/products/${product?.slug}`}
+              href={`/shop/${product?.slug}`}
               data-slider-item
               className="block shrink-0 basis-1/2 sm:basis-1/4"
             >
