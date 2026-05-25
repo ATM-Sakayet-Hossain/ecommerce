@@ -4,6 +4,9 @@ import { notFound } from "next/navigation";
 import { apiClient } from "@/lib/apiClient";
 import { Box, Rating } from "@mui/material";
 import PageContainer from "@/components/layout/PageContainer";
+import Counter from "@/components/ecommerce/counter";
+import RelatedProducts from "@/components/ecommerce/RelatedProducts";
+import ProductDetails from "@/components/ecommerce/ProductDetails";
 
 export default async function Page({ params }) {
   const rawSlug = (await params)?.slug;
@@ -15,7 +18,6 @@ export default async function Page({ params }) {
     revalidate: 60 * 5,
   });
   const data = payload?.data;
-  console.log(data?.images);
   if (!data) {
     notFound();
   }
@@ -29,6 +31,7 @@ export default async function Page({ params }) {
             height={150}
             src={data?.thumbnail}
             alt={data?.title || "Product image"}
+            priority
             className="rounded-2xl shadow-lg w-130 h-120 object-cover"
           />
 
@@ -39,6 +42,7 @@ export default async function Page({ params }) {
                 height={100}
                 key={i}
                 src={img}
+                priority
                 alt="thumbnail"
                 className="w-30 h-30 object-cover border rounded-xl cursor-pointer hover:border-green-500"
               />
@@ -98,18 +102,18 @@ export default async function Page({ params }) {
           <p className="text-sm font-normal text-secondary">
             By <span className="text-brand">{data?.brand || "Brand"}</span>
           </p>
-          <p className="text-gray-600">{data?.description || ""}</p>
+          {/* <p className="text-gray-600">{data?.description || ""}</p> */}
           <div className="flex items-center gap-2">
-            <h3 className="font-medium mb-2">Size / Weight:</h3>
+            <h3 className="font-medium mb-2">Size:</h3>
             <div className="flex gap-2">
-              <button className="px-4 rounded-lg border bg-green-600 text-white border-green-600">
+              <button className="px-4 rounded-lg border bg-green-600 text-white border-green-600 uppercase">
                 {data?.variants?.[0]?.size || "N/A"}
               </button>
             </div>
           </div>
 
           {/* Quantity + Add to Cart */}
-          {/* <Counter /> */}
+          <Counter />
 
           {/* Meta Info */}
           <div className="p-4 mt-6 text-sm text-gray-600">
@@ -127,22 +131,22 @@ export default async function Page({ params }) {
                 Stock: {data?.variants?.[0]?.stock ?? 0}
               </p>
             </div>
-            <div className="flex gap-4 mb-4">
+            {/* <div className="flex gap-4 mb-4">
               <p className="w-60 font-medium">Return: Standard return policy</p>
               <p className="w-60 font-medium">Warranty: Standard warranty</p>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
       <div className="w-full p-6 border border-gray-400 rounded-lg shadow-md">
-        {/* <ProductDetails data={data} /> */}
+        <ProductDetails data={data} />
       </div>
       <div className="my-10">
         <h2 className="text-2xl font-bold text-start mb-6">Related Products</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 md:pt-5 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {/* {relatedProducts.products.map((item) => (
             <RelatedProducts key={item.id} data={item} />
-          ))} */}
+            ))} */}
         </div>
       </div>
     </PageContainer>
