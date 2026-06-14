@@ -1,6 +1,6 @@
 const userSchema = require("../models/userSchema");
 const { VerifiedToken } = require("../services/helper");
-const { responseHandler } = require("../utils/responseHandler");
+const { responseHandler } = require("../Utils/responseHandler");
 
 const authMiddleWare = async (req, res, next) => {
   try {
@@ -22,14 +22,14 @@ const authMiddleWare = async (req, res, next) => {
 
     if (!user) {
       res.cookie("X-AS-Token", "", {
-        httpOnly: false,
-        secure: false,
+        httpOnly: true,
+        secure: true,
         sameSite: "none",
         expires: new Date(0),
       });
       res.cookie("X-RF-Token", "", {
-        httpOnly: false,
-        secure: false,
+        httpOnly: true,
+        secure: true,
         sameSite: "none",
         expires: new Date(0),
       });
@@ -38,14 +38,14 @@ const authMiddleWare = async (req, res, next) => {
 
     if (user.role !== decoded.role) {
       res.cookie("X-AS-Token", "", {
-        httpOnly: false,
-        secure: false,
+        httpOnly: true,
+        secure: true,
         sameSite: "none",
         expires: new Date(0),
       });
       res.cookie("X-RF-Token", "", {
-        httpOnly: false,
-        secure: false,
+        httpOnly: true,
+        secure: true,
         sameSite: "none",
         expires: new Date(0),
       });
