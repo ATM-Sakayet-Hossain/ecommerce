@@ -207,16 +207,16 @@ const login = async (req, res) => {
     const accToken = generateAccessToken(user);
     const refToken = generateRefreshToken(user);
     res.cookie("X-AS-Token", accToken, {
-      httpOnly: false, // Not accessible by client-side JS
-      secure: false, // Only sent over HTTPS
+      httpOnly: true, // Not accessible by client-side JS
+      secure: true, // Only sent over HTTPS
       maxAge: 3600000, // Expires in 1 hour (in milliseconds)
-      // sameSite: 'Strict' // Only send for same-site requests
+      sameSite: 'none' // Only send for same-site requests
     });
     res.cookie("X-RF-Token", refToken, {
-      httpOnly: false, // Not accessible by client-side JS
-      secure: false, // Only sent over HTTPS
+      httpOnly: true, // Not accessible by client-side JS
+      secure: true, // Only sent over HTTPS
       maxAge: 1296000000, // Expires in 15 day (in milliseconds)
-      // sameSite: 'Strict' // Only send for same-site requests
+      sameSite: 'none' // Only send for same-site requests
     });
     responseHandler.success(res, 200, "Welcome, your login was successful.");
   } catch (error) {
