@@ -1,4 +1,4 @@
-const { responseHandler } = require("../utils/responseHandler")
+const { responseHandler } = require("../Utils/responseHandler")
 
 const roleCheckMiddleware = (...roles) => {
     return (req, res, next) => {
