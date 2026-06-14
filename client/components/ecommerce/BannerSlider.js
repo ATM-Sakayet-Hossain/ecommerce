@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { FiChevronLeft, FiChevronRight, FiPause, FiPlay } from "react-icons/fi";
+import { API, apiPath } from "@/lib/routes";
 
 function BannerSlider() {
   const [banners, setBanners] = useState([]);
@@ -18,7 +19,7 @@ function BannerSlider() {
         setIsLoading(true);
         setError("");
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/banner/get`,
+          `${process.env.NEXT_PUBLIC_BASE_URL}${apiPath(API.banner.get)}`,
           {
             next: { revalidate: 500000 },
           },

@@ -2,9 +2,28 @@ const { default: mongoose } = require("mongoose");
 const cartSchema = require("../models/cartSchema");
 const ordersSchema = require("../models/ordersSchema");
 const { generateOrderNumber, getPagination } = require("../services/helper");
+const { enrichOrderItems } = require("../services/orderEnrichment");
 const { responseHandler } = require("../Utils/responseHandler");
-const stripe = require("stripe")(`${process.env.STRIPE}`);
 const endpointSecret = process.env.ENDPOINTSECRET;
+
+const getStripeClient = () => {
+  const key = process.env.STRIPE?.trim();
+  if (!key) return null;
+  return require("stripe")(key);
+};
+
+const parseInsideDhaka = (value) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") return value === "true";
+  return null;
+};
+
+const clearUserCart = async (userId) => {
+  const cart = await cartSchema.findOne({ user: userId });
+  if (!cart) return;
+  cart.items = [];
+  await cart.save();
+};
 
 const checkOut = async (req, res) => {
   const { paymenType, cartId, shippingAddress, insideDhaka } = req.body;
@@ -12,7 +31,8 @@ const checkOut = async (req, res) => {
     if (!cartId) return responseHandler.error(res, 400, "invalid request");
     if (!shippingAddress)
       return responseHandler.error(res, 400, "Address is required");
-    if (!insideDhaka)
+    const isInsideDhaka = parseInsideDhaka(insideDhaka);
+    if (isInsideDhaka === null)
       return responseHandler.error(
         res,
         400,
@@ -20,9 +40,13 @@ const checkOut = async (req, res) => {
       );
     if (!paymenType)
       return responseHandler.error(res, 400, "Payment methord is required");
-    const cartData = await cartSchema.findOne({ _id: cartId });
-    if (!cartData) return responseHandler.error(res, 400, "invalid rewuest");
-    const charge = insideDhaka === "true" ? 80 : 120;
+    const cartData = await cartSchema.findOne({
+      _id: cartId,
+      user: req.user?._id,
+    });
+    if (!cartData?.items?.length)
+      return responseHandler.error(res, 400, "Cart is empty");
+    const charge = isInsideDhaka ? 80 : 120;
     const totalPrice = cartData.items.reduce((total, current) => {
       return (total += current.subtotal);
     }, charge);
@@ -35,43 +59,74 @@ const checkOut = async (req, res) => {
       user: req.user?._id,
       items: cartData.items,
       shippingAddress,
-      insideDhaka,
+      insideDhaka: isInsideDhaka,
       deliveryCharge: charge,
       payment: { method: paymenType },
       orderNumber,
       totalPrice,
     });
     await orderData.save();
-    if (paymenType === "cash")
+
+    if (paymenType === "cash") {
+      await clearUserCart(req.user._id);
       return responseHandler.success(
         res,
         200,
-        orderData,
+        { order: orderData },
         "Order placed successfully",
       );
+    }
+
+    if (paymenType !== "Stripe") {
+      return responseHandler.error(
+        res,
+        400,
+        `${paymenType} payment is not available yet. Please choose cash or card (Stripe).`,
+      );
+    }
+
+    const stripe = getStripeClient();
+    if (!stripe) {
+      return responseHandler.error(
+        res,
+        400,
+        "Card payment is not configured on the server.",
+      );
+    }
+
+    const clientUrl =
+      process.env.CLIENT_URL?.trim() || "http://localhost:3000";
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: [
         {
           price_data: {
-            currency: "BDT",
+            currency: "bdt",
             product_data: {
-              name: "T-Shirt",
-              description: `Blue T-Shirt with chest print`,
+              name: `Order ${orderNumber}`,
+              description: "SakkhorMart order payment",
             },
-            unit_amount: 20000 * 100,
+            unit_amount: Math.round(totalPrice * 100),
           },
           quantity: 1,
         },
       ],
-      customer_email: `${req.user.email}`,
+      customer_email: req.user?.email,
       metadata: {
-        orderId: `${orderNumber}`,
+        orderNumber,
       },
-      success_url: `https://example.com/success`,
-      cancel_url: `https://example.com/error`,
+      success_url: `${clientUrl}/orders/${orderNumber}?paid=1`,
+      cancel_url: `${clientUrl}/checkout?cancelled=1`,
     });
-    res.redirect(303, session.url);
+
+    await clearUserCart(req.user._id);
+
+    return responseHandler.success(
+      res,
+      200,
+      { order: orderData, checkoutUrl: session.url },
+      "Redirecting to payment",
+    );
   } catch (error) {
     console.log(error);
     responseHandler.error(
@@ -83,6 +138,10 @@ const checkOut = async (req, res) => {
 };
 
 const webhook = async (req, res) => {
+  const stripe = getStripeClient();
+  if (!stripe || !endpointSecret) {
+    return res.status(400).send("Stripe webhook is not configured");
+  }
   const signature = req.headers["stripe-signature"];
   let event;
   try {
@@ -110,6 +169,76 @@ const webhook = async (req, res) => {
   }
   res.status(200).send();
 };
+const getOrderByNumber = async (req, res) => {
+  try {
+    const { orderNumber } = req.params;
+    const userId = req.user?._id;
+    const userRole = req.user?.role;
+    if (!userId) return responseHandler.error(res, 401, "Unauthorized");
+    if (!orderNumber) return responseHandler.error(res, 400, "Order number is required");
+
+    const isAdmin = userRole === "admin" || userRole === "editor";
+    const matchOrders = { orderNumber };
+    if (!isAdmin) {
+      matchOrders.user = new mongoose.Types.ObjectId(userId);
+    }
+
+    const [order] = await ordersSchema.aggregate([
+      { $match: matchOrders },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      { $unwind: "$user" },
+      {
+        $lookup: {
+          from: "products",
+          localField: "items.product",
+          foreignField: "_id",
+          as: "productDocs",
+        },
+      },
+      {
+        $project: {
+          orderNumber: 1,
+          status: 1,
+          totalPrice: 1,
+          payment: 1,
+          shippingAddress: 1,
+          insideDhaka: 1,
+          deliveryCharge: 1,
+          items: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          "user.fullName": 1,
+          "user.email": 1,
+          productDocs: 1,
+        },
+      },
+    ]);
+
+    if (!order) return responseHandler.error(res, 404, "Order not found");
+
+    return responseHandler.success(
+      res,
+      200,
+      enrichOrderItems(order),
+      "Order fetched successfully",
+    );
+  } catch (error) {
+    console.log(error);
+    return responseHandler.error(
+      res,
+      500,
+      "Something went wrong. Please try again later",
+    );
+  }
+};
+
 const getAllOrders = async (req, res) => {
   try {
     const { page, limit, skip } = getPagination(req);
@@ -150,15 +279,29 @@ const getAllOrders = async (req, res) => {
       },
       { $unwind: "$user" },
       {
+        $lookup: {
+          from: "products",
+          localField: "items.product",
+          foreignField: "_id",
+          as: "productDocs",
+        },
+      },
+      {
         $match: search
           ? {
               $or: [
                 { orderNumber: { $regex: search, $options: "i" } },
                 { "user.email": { $regex: search, $options: "i" } },
-                { "user.name": { $regex: search, $options: "i" } },
+                { "user.fullName": { $regex: search, $options: "i" } },
               ],
             }
           : {},
+      },
+      {
+        $addFields: {
+          previewThumbnail: { $arrayElemAt: ["$productDocs.thumbnail", 0] },
+          itemCount: { $size: { $ifNull: ["$items", []] } },
+        },
       },
       {
         $project: {
@@ -167,7 +310,9 @@ const getAllOrders = async (req, res) => {
           totalPrice: 1,
           payment: 1,
           createdAt: 1,
-          "user.name": 1,
+          previewThumbnail: 1,
+          itemCount: 1,
+          "user.fullName": 1,
           "user.email": 1,
         },
       },
@@ -256,7 +401,7 @@ const updateOrder = async (req, res) => {
           payment: 1,
           totalPrice: 1,
           createdAt: 1,
-          "user.name": 1,
+          "user.fullName": 1,
           "user.email": 1,
         },
       },
@@ -276,4 +421,10 @@ const updateOrder = async (req, res) => {
     );
   }
 };
-module.exports = { checkOut, webhook, getAllOrders, updateOrder };
+module.exports = {
+  checkOut,
+  webhook,
+  getAllOrders,
+  getOrderByNumber,
+  updateOrder,
+};

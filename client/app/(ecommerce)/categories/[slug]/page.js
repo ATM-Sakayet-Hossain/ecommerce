@@ -7,8 +7,7 @@ import { FiArrowRight, FiStar } from "react-icons/fi";
 
 export const dynamic = "force-dynamic";
 
-// const API_BASE_URL = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_BASE_URL;
-const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+import { API, apiUrl } from "@/lib/routes";
 
 function normalizeParent(parent) {
   if (!parent || parent === "null") {
@@ -160,7 +159,12 @@ function buildBreadcrumbFromCategory(category, categoryMap) {
 
 async function loadCategories() {
   const response = await fetch(
-    `${API_BASE_URL}/category/get?page=1&limit=1000&sortBy=sortOrder&order=asc`,
+    apiUrl(API.category.get, {}, {
+      page: 1,
+      limit: 1000,
+      sortBy: "sortOrder",
+      order: "asc",
+    }),
     { cache: "no-store" },
   );
   if (!response.ok) {
@@ -171,13 +175,10 @@ async function loadCategories() {
 }
 
 async function loadProducts() {
-  const response = await fetch(
-    `${API_BASE_URL}/product/get`,
-    {
-      cache: "no-store",
-      next: { revalidate: 0 },
-    },
-  );
+  const response = await fetch(apiUrl(API.product.get), {
+    cache: "no-store",
+    next: { revalidate: 0 },
+  });
   if (!response.ok) {
     throw new Error("Unable to load products");
   }
@@ -378,7 +379,7 @@ export default async function Page({ params }) {
                 </div>
                 <div className="mt-4 flex items-center justify-between gap-3">
                   <Link
-                    href={`/products/${product.slug}`}
+                    href={`/shop/${product.slug}`}
                     className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 transition hover:text-emerald-600"
                   >
                     View details

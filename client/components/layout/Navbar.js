@@ -7,7 +7,12 @@ import { FiAlignJustify, FiX } from "react-icons/fi";
 import { usePathname } from "next/navigation";
 import { decodeJwt } from "jose";
 
-const baseNavLinks = [{ label: "Shop", href: "/shop" }];
+import {
+  accountNavLinks,
+  authRoutes,
+  publicNavLinks,
+  publicRoutes,
+} from "@/lib/routes";
 
 const authCookieName = "X-AS-Token";
 
@@ -92,9 +97,24 @@ const Navbar = () => {
               </div>
             </form>
           </div>
+          <nav className="hidden lg:flex items-center gap-1 mr-2">
+            {publicNavLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                  isActivePath(link.href)
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-emerald-700"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
           <div className="flex items-center col-span-3 gap-2 sm:gap-3">
             <Link
-              href="/cart"
+              href={publicRoutes.cart.path}
               className="relative hidden sm:inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 hover:text-emerald-600"
               title="Shopping Cart"
             >
@@ -103,14 +123,14 @@ const Navbar = () => {
             </Link>
             {!authState.isLoggedIn ? (
               <Link
-                href="/login"
+                href={authRoutes.login.path}
                 className="hidden sm:inline-flex items-center justify-center rounded-xl bg-linear-to-br from-emerald-500 via-teal-500 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-600"
               >
                 Sign In
               </Link>
             ) : (
               <Link
-                href="/profile"
+                href={authRoutes.profile.path}
                 className="hidden sm:inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 hover:text-emerald-600"
                 title="Account"
               >
@@ -147,8 +167,8 @@ const Navbar = () => {
               </div>
             </form>
 
-            {/* <nav className="grid gap-2">
-              {navLinks.map((link) => {
+            <nav className="grid gap-2">
+              {publicNavLinks.map((link) => {
                 const isActive = isActivePath(link.href);
                 return (
                   <Link
@@ -165,11 +185,27 @@ const Navbar = () => {
                   </Link>
                 );
               })}
-            </nav> */}
+              {authState.isLoggedIn
+                ? accountNavLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={closeMenu}
+                      className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-all ${
+                        isActivePath(link.href)
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-slate-50 text-slate-700 hover:bg-slate-100"
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  ))
+                : null}
+            </nav>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <Link
-                href="/cart"
+                href={publicRoutes.cart.path}
                 onClick={closeMenu}
                 className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-emerald-200 hover:text-emerald-600"
               >
@@ -178,7 +214,7 @@ const Navbar = () => {
               </Link>
               {!authState.isLoggedIn ? (
                 <Link
-                  href="/login"
+                  href={authRoutes.login.path}
                   onClick={closeMenu}
                   className="col-span-2 flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-600 sm:col-span-1"
                 >
@@ -186,7 +222,7 @@ const Navbar = () => {
                 </Link>
               ) : (
                 <Link
-                  href="/profile"
+                  href={authRoutes.profile.path}
                   onClick={closeMenu}
                   className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-emerald-200 hover:text-emerald-600"
                 >

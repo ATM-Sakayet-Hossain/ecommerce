@@ -27,24 +27,28 @@ export default function OrdersTable({ orders = [] }) {
           <tbody>
             {orders.map((order, index) => (
               <tr
-                key={order.id}
+                key={order._id || order.orderNumber || order.id}
                 className="border-b hover:bg-gray-50 cursor-pointer"
               >
                 <td className="py-3">{index + 1}</td>
 
                 <td className="text-blue-600 font-medium">
-                  <Link href={`/dashboard/orders/${order.id}`}>
-                    #{order.id.slice(-8)}
+                  <Link
+                    href={`/admin/orders/${encodeURIComponent(order.orderNumber || "")}`}
+                  >
+                    #{String(order.orderNumber || order.id).slice(-8)}
                   </Link>
                 </td>
-                <td>{order.customerName}</td>
+                <td>{order.user?.name || order.customerName || "-"}</td>
                 <td>
                   <span className="px-2 py-1 bg-gray-100 rounded-md">
-                    {order.totalQty}
+                    {order.totalQty ?? "-"}
                   </span>
                 </td>
                 <td className="font-semibold">
-                  {formatCurrency(order.totalPrice, order.currency)}
+                  {order.currency
+                    ? formatCurrency(order.totalPrice, order.currency)
+                    : `৳${Number(order.totalPrice || 0).toLocaleString("en-BD")}`}
                 </td>
                 <td>
                   <span

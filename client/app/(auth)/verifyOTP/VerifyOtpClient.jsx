@@ -4,6 +4,7 @@ import Button from "@/components/UI/Button";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { API, apiPath } from "@/lib/routes";
 
 export default function VerifyOtpClient() {
   const router = useRouter();
@@ -81,7 +82,7 @@ export default function VerifyOtpClient() {
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/auth/verifyOTP`,
+        `${process.env.NEXT_PUBLIC_BASE_URL}${apiPath(API.auth.verifyOTP)}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -176,7 +177,7 @@ export default function VerifyOtpClient() {
 
     try {
       const res = await fetch(
-        process.env.NEXT_PUBLIC_BASE_URL + "/auth/resendOTP",
+        `${process.env.NEXT_PUBLIC_BASE_URL}${apiPath(API.auth.resendOTP)}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

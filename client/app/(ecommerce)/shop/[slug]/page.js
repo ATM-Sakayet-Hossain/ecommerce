@@ -2,11 +2,55 @@ import Image from "next/image";
 import React from "react";
 import { notFound } from "next/navigation";
 import { apiClient } from "@/lib/apiClient";
+import { API, apiPath } from "@/lib/routes";
 import { Box, Rating } from "@mui/material";
 import PageContainer from "@/components/layout/PageContainer";
-import Counter from "@/components/ecommerce/counter";
+import ProductPurchase from "@/components/ecommerce/ProductPurchase";
 import RelatedProducts from "@/components/ecommerce/RelatedProducts";
 import ProductDetails from "@/components/ecommerce/ProductDetails";
+import {
+  formatPrice,
+  getDiscountLabel,
+  getProductRating,
+  getSalePrice,
+  hasDiscount,
+  isInStock,
+  getTotalStock,
+} from "@/components/UI/helper";
+
+async function fetchRelatedProducts(categoryId, currentSlug) {
+  if (!categoryId) {
+    return [];
+  }
+  try {
+    const payload = await apiClient.get(
+      `${apiPath(API.product.get)}?category=${categoryId}&limit=8`,
+      { revalidate: 60 * 5 },
+    );
+    const products = payload?.data?.product ?? [];
+    return products
+      .filter((product) => product?.slug !== currentSlug)
+      .slice(0, 5);
+  } catch {
+    return [];
+  }
+}
+
+async function fetchProductReviews(slug) {
+  if (!slug) {
+    return [];
+  }
+
+  try {
+    const payload = await apiClient.get(
+      `${apiPath(API.review.get)}?slug=${encodeURIComponent(slug)}&limit=10`,
+      { revalidate: 60 * 5 },
+    );
+    return payload?.data?.reviews ?? [];
+  } catch {
+    return [];
+  }
+}
 
 export default async function Page({ params }) {
   const rawSlug = (await params)?.slug;
@@ -14,7 +58,8 @@ export default async function Page({ params }) {
   if (!slug) {
     notFound();
   }
-  const payload = await apiClient.get(`/product/${slug}`, {
+
+  const payload = await apiClient.get(apiPath(API.product.bySlug, { slug }), {
     revalidate: 60 * 5,
   });
   const data = payload?.data;
@@ -22,38 +67,54 @@ export default async function Page({ params }) {
     notFound();
   }
 
+  const categoryId = data?.category?._id ?? data?.category;
+  const relatedProducts = await fetchRelatedProducts(categoryId, slug);
+  const reviews = await fetchProductReviews(slug);
+  const inStock = isInStock(data?.variants);
+  const salePrice = getSalePrice(data);
+  const discountLabel = getDiscountLabel(data);
+  const rating = getProductRating(data);
+
   return (
     <PageContainer>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6 max-w-6xl mx-auto">
         <div className="flex flex-col items-center">
-          <Image
-            width={150}
-            height={150}
-            src={data?.thumbnail}
-            alt={data?.title || "Product image"}
-            priority
-            className="rounded-2xl shadow-lg w-130 h-120 object-cover"
-          />
-
-          <div className="flex gap-3 mt-4">
-            {(data?.images ?? []).map((img, i) => (
+          <div className="relative w-full max-w-md aspect-square">
+            {data?.thumbnail ? (
               <Image
-                width={100}
-                height={100}
-                key={i}
-                src={img}
+                src={data.thumbnail}
+                alt={data?.title || "Product image"}
+                fill
                 priority
-                alt="thumbnail"
-                className="w-30 h-30 object-cover border rounded-xl cursor-pointer hover:border-green-500"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="rounded-2xl shadow-lg object-cover"
               />
+            ) : null}
+          </div>
+
+          <div className="flex gap-3 mt-4 flex-wrap justify-center">
+            {(data?.images ?? []).map((img, i) => (
+              <div key={i} className="relative w-20 h-20">
+                <Image
+                  src={img}
+                  fill
+                  alt={`${data?.title || "Product"} thumbnail ${i + 1}`}
+                  sizes="80px"
+                  className="object-cover border rounded-xl cursor-pointer hover:border-green-500"
+                />
+              </div>
             ))}
           </div>
         </div>
         <div className="flex flex-col gap-4">
           <span
-            className={`px-3 py-1 rounded-full w-max text-sm ${data?.variants.stock ? "bg-pink-100 text-pink-600" : "bg-green-100 text-green-600"}`}
+            className={`px-3 py-1 rounded-full w-max text-sm ${
+              inStock
+                ? "bg-green-100 text-green-600"
+                : "bg-pink-100 text-pink-600"
+            }`}
           >
-            {data?.variants.stock ? "stock Out" : "in Stock"}
+            {inStock ? "In stock" : "Out of stock"}
           </span>
           <div>
             <h4 className="text-xs font-normal text-secondary">
@@ -61,94 +122,73 @@ export default async function Page({ params }) {
             </h4>
             <h1 className="text-2xl font-bold">{data?.title || "Product"}</h1>
           </div>
-          {/* Ratings */}
           <div className="flex items-center gap-2">
             <Box>
               <Rating
                 className="text-sm"
-                name="simple-controlled"
-                value={data?.rating || 0}
+                name="product-rating"
+                value={rating}
+                readOnly
               />
             </Box>
             <span className="text-gray-600 text-sm">
-              {/* {(data?.reviews ?? []).length > 0
-                ? (data?.reviews ?? []).length
-                : "0"}{" "} */}
-              Reviews
+              {data?.ratings?.count ?? 0} reviews
             </span>
           </div>
-          {/* Price */}
-          <div className="flex items-baseline mb-3">
-            <span className="text-green-600 text-2xl font-bold mr-2">৳</span>
-            <span className="text-green-600 text-2xl font-bold mr-2">
-              {data?.price - data?.discountPercentage ||
-                data?.discountPrice ||
-                null}
+          <div className="flex items-baseline mb-3 flex-wrap gap-2">
+            <span className="text-green-600 text-2xl font-bold">
+              {formatPrice(salePrice)}
             </span>
-            <span className="text-gray-400 line-through text-base mr-3">
-              {data?.price}
-            </span>
-            {data?.discountPercentage || data?.discountPrice ? (
-              <span className="text-gray-700 text-base font-semibold bg-amber-300 px-1 rounded-sm">
-                {data?.discountPercentage + "%" ||
-                  data?.discountPrice + "TK" ||
-                  null}
-                Off
+            {hasDiscount(data) ? (
+              <span className="text-gray-400 line-through text-base">
+                {formatPrice(data?.price)}
               </span>
-            ) : (
-              ""
-            )}
+            ) : null}
+            {discountLabel ? (
+              <span className="text-gray-700 text-base font-semibold bg-amber-300 px-1 rounded-sm">
+                {discountLabel} off
+              </span>
+            ) : null}
           </div>
           <p className="text-sm font-normal text-secondary">
             By <span className="text-brand">{data?.brand || "Brand"}</span>
           </p>
-          {/* <p className="text-gray-600">{data?.description || ""}</p> */}
-          <div className="flex items-center gap-2">
-            <h3 className="font-medium mb-2">Size:</h3>
-            <div className="flex gap-2">
-              <button className="px-4 rounded-lg border bg-green-600 text-white border-green-600 uppercase">
-                {data?.variants?.[0]?.size || "N/A"}
-              </button>
-            </div>
-          </div>
+          <ProductPurchase
+            productId={data?._id}
+            variants={data?.variants ?? []}
+            inStock={inStock}
+          />
 
-          {/* Quantity + Add to Cart */}
-          <Counter />
-
-          {/* Meta Info */}
           <div className="p-4 mt-6 text-sm text-gray-600">
-            <div className="flex gap-4 mb-4">
-              <p className="w-60  font-medium">Delivery: Standard shipping</p>
-              <p className="w-60 font-medium">
-                SKU: {data?.variants?.[0]?.sku || "N/A"}
+            <div className="flex gap-4 mb-4 flex-wrap">
+              <p className="font-medium">Delivery: Standard shipping</p>
+            </div>
+            <div className="flex gap-4 mb-4 flex-wrap">
+              <p className="font-medium">
+                Tags: {Array.isArray(data?.tags) ? data.tags.join(", ") : "—"}
+              </p>
+              <p className="font-medium">
+                Stock: {getTotalStock(data?.variants)}
               </p>
             </div>
-            <div className="flex gap-4 mb-4">
-              <p className="w-60 font-medium">
-                Tags: {Array.isArray(data?.tags) ? data.tags.join(", ") : ""}
-              </p>
-              <p className="w-60 font-medium">
-                Stock: {data?.variants?.[0]?.stock ?? 0}
-              </p>
-            </div>
-            {/* <div className="flex gap-4 mb-4">
-              <p className="w-60 font-medium">Return: Standard return policy</p>
-              <p className="w-60 font-medium">Warranty: Standard warranty</p>
-            </div> */}
           </div>
         </div>
       </div>
       <div className="w-full p-6 border border-gray-400 rounded-lg shadow-md">
-        <ProductDetails data={data} />
+        <ProductDetails data={data} reviews={reviews} />
       </div>
-      <div className="my-10">
-        <h2 className="text-2xl font-bold text-start mb-6">Related Products</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 md:pt-5 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {/* {relatedProducts.products.map((item) => (
-            <RelatedProducts key={item.id} data={item} />
-            ))} */}
+      {relatedProducts.length > 0 ? (
+        <div className="my-10 px-6">
+          <h2 className="text-2xl font-bold text-start mb-6">
+            Related Products
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+            {relatedProducts.map((item) => (
+              <RelatedProducts key={item._id || item.slug} data={item} />
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
     </PageContainer>
   );
 }

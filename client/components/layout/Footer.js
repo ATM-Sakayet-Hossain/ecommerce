@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import PageContainer from './PageContainer';
+import { authRoutes, publicRoutes } from '@/lib/routes';
 
 const Footer = () => {
   return (
@@ -23,16 +24,16 @@ const Footer = () => {
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">Shop</h2>
             <div className="mt-4 grid gap-3 text-sm">
-              <Link href="/shop" className="transition-colors hover:text-white">All products</Link>
-              <Link href="/categories" className="transition-colors hover:text-white">Categories</Link>
-              <Link href="/cart" className="transition-colors hover:text-white">Cart</Link>
+              <Link href={publicRoutes.shop.path} className="transition-colors hover:text-white">All products</Link>
+              <Link href={publicRoutes.categories.path} className="transition-colors hover:text-white">Categories</Link>
+              <Link href={publicRoutes.cart.path} className="transition-colors hover:text-white">Cart</Link>
             </div>
           </div>
 
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">Support</h2>
             <div className="mt-4 grid gap-3 text-sm">
-              <Link href="/dashboard" className="transition-colors hover:text-white">Account dashboard</Link>
+              <Link href={authRoutes.profile.path} className="transition-colors hover:text-white">My account</Link>
               <Link href="/" className="transition-colors hover:text-white">Shipping & returns</Link>
               <Link href="/" className="transition-colors hover:text-white">Privacy policy</Link>
               <Link href="/" className="transition-colors hover:text-white">Contact us</Link>

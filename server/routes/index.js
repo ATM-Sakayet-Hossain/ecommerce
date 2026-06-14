@@ -21,7 +21,7 @@ route.use("/cart", authMiddleWare, cartRoute);
 route.use("/banner", bannerRoute);
 route.use("/review", reviewRoute);
 route.use("/activity-logs", activityLogRoute);
-route.use(authMiddleWare, orderRoute);
+route.use("/order", authMiddleWare, orderRoute);
 
 
 module.exports = route;

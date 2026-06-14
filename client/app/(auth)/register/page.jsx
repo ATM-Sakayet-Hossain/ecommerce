@@ -4,6 +4,7 @@ import Input from "@/components/UI/Input";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { API, apiPath } from "@/lib/routes";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -22,7 +23,7 @@ export default function RegisterPage() {
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/auth/register`,
+        `${process.env.NEXT_PUBLIC_BASE_URL}${apiPath(API.auth.register)}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

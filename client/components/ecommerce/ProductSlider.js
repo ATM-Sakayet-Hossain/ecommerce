@@ -8,6 +8,7 @@ import {
 } from "react-icons/fa";
 import ProductCard from "../UI/ProductCard";
 import { apiClient } from "@/lib/apiClient";
+import { API, apiPath } from "@/lib/routes";
 
 const ProducrSlider = ({ tittle }) => {
   const scrollRef = useRef(null);
@@ -34,7 +35,7 @@ const ProducrSlider = ({ tittle }) => {
       try {
         setIsLoading(true);
         setError("");
-        const payload = await apiClient.get("/product/get", {
+        const payload = await apiClient.get(apiPath(API.product.get), {
           revalidate: 60 * 5,
         });
         const nextProducts =

@@ -356,7 +356,7 @@ function CartSystem() {
           </div>
 
           <Link
-            href="/dashboard"
+            href="/checkout"
             className="mt-5 inline-flex w-full items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-50"
           >
             Continue to checkout pipeline

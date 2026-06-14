@@ -1,4 +1,6 @@
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+import { apiPath } from "./routes";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8000";
 
 async function request(
   endpoint,
@@ -10,12 +12,16 @@ async function request(
     tags = [], // cache tags for revalidation
   } = {},
 ) {
+  const isFormData =
+    typeof FormData !== "undefined" && body instanceof FormData;
   const config = {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      ...headers,
-    },
+    headers: isFormData
+      ? { ...headers }
+      : {
+          "Content-Type": "application/json",
+          ...headers,
+        },
     credentials: "include",
     next: {},
   };
@@ -28,7 +34,7 @@ async function request(
     config.next.tags = tags;
   }
   if (body) {
-    config.body = JSON.stringify(body);
+    config.body = isFormData ? body : JSON.stringify(body);
   }
   try {
     const res = await fetch(`${BASE_URL}${endpoint}`, config);
@@ -44,8 +50,13 @@ async function request(
     }
     return data;
   } catch (error) {
-    console.error("API Error:", error.message);
-    throw error;
+    const message =
+      error instanceof TypeError && error.message === "Failed to fetch"
+        ? "Unable to reach the API server. Ensure the backend is running and NEXT_PUBLIC_BASE_URL is set correctly."
+        : error instanceof Error
+          ? error.message
+          : "API request failed";
+    throw new Error(message);
   }
 }
 // REST helpers
@@ -62,4 +73,19 @@ export const apiClient = {
     request(url, { ...options, method: "PATCH", body }),
 
   delete: (url, options = {}) => request(url, { ...options, method: "DELETE" }),
+
+  /** Call using route definition from lib/routes.js */
+  fromRoute(routeDef, { params = {}, body, query, ...options } = {}) {
+    let path = apiPath(routeDef, params);
+    if (query && Object.keys(query).length) {
+      const qs = new URLSearchParams(
+        Object.entries(query).filter(([, v]) => v != null && v !== ""),
+      ).toString();
+      if (qs) path += `?${qs}`;
+    }
+    const method = routeDef?.method || "GET";
+    if (method === "GET") return request(path, { ...options, method });
+    if (method === "DELETE") return request(path, { ...options, method });
+    return request(path, { ...options, method, body });
+  },
 };

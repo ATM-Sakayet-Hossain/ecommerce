@@ -1,16 +1,16 @@
 const express = require("express");
-const authMiddleWare = require("../middleware/authMiddleWare");
+const roleCheckMiddleware = require("../middleware/roleCheckMiddleware");
 const { activityLogger } = require("../middleware/activityLogger");
 const {
   checkOut,
   getAllOrders,
+  getOrderByNumber,
   updateOrder,
 } = require("../controllers/orderController");
 const route = express.Router();
 
 route.post(
   "/checkout",
-  authMiddleWare,
   activityLogger({
     action: "PLACE_ORDER",
     entityType: "Order",
@@ -19,9 +19,10 @@ route.post(
   checkOut,
 );
 route.get("/get", getAllOrders);
+route.get("/detail/:orderNumber", getOrderByNumber);
 route.put(
   "/admin/update/:orderId",
-  authMiddleWare,
+  roleCheckMiddleware("admin", "editor"),
   activityLogger({
     action: "UPDATE_ORDER",
     entityType: "Order",

@@ -1,9 +1,53 @@
 "use client";
+import { useEffect, useState } from "react";
 import { Box, Rating } from "@mui/material";
 import React from "react";
+import { apiClient } from "@/lib/apiClient";
+import { API, apiPath } from "@/lib/routes";
+import { getCategoryName } from "@/components/UI/helper";
 
-const ProductDetails = ({ data }) => {
+const ProductDetails = ({ data, reviews = [] }) => {
   const [activeTab, setActiveTab] = React.useState("Description");
+  const [reviewItems, setReviewItems] = useState(reviews);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+
+  useEffect(() => {
+    setReviewItems(reviews);
+  }, [reviews]);
+
+  useEffect(() => {
+    const productSlug = data?.slug;
+    if (activeTab !== "Reviews" || reviewItems.length > 0 || !productSlug) {
+      return;
+    }
+
+    let isMounted = true;
+    const loadReviews = async () => {
+      setIsLoadingReviews(true);
+      try {
+        const payload = await apiClient.get(
+          `${apiPath(API.review.get)}?slug=${encodeURIComponent(productSlug)}&limit=10`,
+        );
+        if (isMounted) {
+          setReviewItems(payload?.data?.reviews ?? []);
+        }
+      } catch {
+        if (isMounted) {
+          setReviewItems([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingReviews(false);
+        }
+      }
+    };
+
+    loadReviews();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab, data?.slug, reviewItems.length]);
 
   return (
     <>
@@ -20,7 +64,7 @@ const ProductDetails = ({ data }) => {
               >
                 {tab}
               </li>
-            )
+            ),
           )}
         </ul>
       </div>
@@ -52,7 +96,7 @@ const ProductDetails = ({ data }) => {
             </p>
             <p className="text-gray-700 mb-4">Brand: {data?.brand || "N/A"}</p>
             <p className="text-gray-700 mb-4">
-              Category: {data?.category || "N/A"}
+              Category: {getCategoryName(data?.category) || "N/A"}
             </p>
           </>
         )}
@@ -65,26 +109,39 @@ const ProductDetails = ({ data }) => {
         )}
         {activeTab === "Reviews" && (
           <>
-            {data?.reviews && data.reviews.length > 0 ? (
-              data.reviews.map((review, index) => (
-                <div key={index} className="mb-4 border border-gray-400 px-5 py-3 rounded-lg">
-                  <p className="text-gray-700">{review.comment}</p>
-                  <div className="flex items-center gap-2">
+            {isLoadingReviews ? (
+              <p className="text-gray-700">Loading reviews...</p>
+            ) : reviewItems.length > 0 ? (
+              reviewItems.map((review) => (
+                <div
+                  key={review._id}
+                  className="mb-4 rounded-lg border border-gray-400 px-5 py-3"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {review.user?.fullName ||
+                          review.user?.email ||
+                          "Verified buyer"}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {review.createdAt
+                          ? new Date(review.createdAt).toLocaleDateString()
+                          : ""}
+                      </p>
+                    </div>
                     <Box>
                       <Rating
                         className="text-sm"
-                        name="simple-controlled"
-                        value={review?.rating}
+                        name={`review-rating-${review._id}`}
+                        value={Number(review?.rating) || 0}
+                        readOnly
                       />
                     </Box>
                   </div>
-                  <p className="text-gray-800 font-medium">
-                    Name: {review.reviewerName}
+                  <p className="mt-3 text-gray-700">
+                    {review.comment || review.review || "No comment provided."}
                   </p>
-                  <p className="text-gray-800 font-medium">
-                    Email. {review.reviewerEmail}
-                  </p>
-                  <p className="text-gray-700">{review.date}</p>
                 </div>
               ))
             ) : (

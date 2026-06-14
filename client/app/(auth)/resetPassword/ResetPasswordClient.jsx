@@ -5,6 +5,7 @@ import Input from "@/components/UI/Input";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { API, apiPath } from "@/lib/routes";
 
 const ResetPasswordClient = () => {
   const router = useRouter();
@@ -42,7 +43,7 @@ const ResetPasswordClient = () => {
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/auth/resetPass?sec=${token}`,
+        `${process.env.NEXT_PUBLIC_BASE_URL}${apiPath(API.auth.resetPass)}?sec=${token}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

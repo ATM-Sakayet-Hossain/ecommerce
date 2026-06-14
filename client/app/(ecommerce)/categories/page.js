@@ -2,8 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import PageContainer from "@/components/layout/PageContainer";
 
-const API_BASE_URL =
-  process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_BASE_URL;
+import { API, apiUrl } from "@/lib/routes";
 
 export const metadata = {
   title: "Categories | SakkhorMart",
@@ -27,17 +26,13 @@ function getFeaturedCategories(categories, limit = 6) {
 }
 
 export default async function Page() {
-  const response = await fetch(
-    `${API_BASE_URL}/category/get`,
-    {
-      cache: "no-store",
-    },
-  );
+  const response = await fetch(apiUrl(API.category.get), {
+    cache: "no-store",
+  });
 
   if (!response.ok) {
     throw new Error("Unable to load categories");
   }
-console.log(response)
   const payload = await response.json();
   const categories = payload?.data?.categories || payload?.categories || [];
   const featuredCategories = getFeaturedCategories(categories, 9);

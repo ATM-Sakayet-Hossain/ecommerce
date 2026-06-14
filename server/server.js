@@ -1,7 +1,6 @@
 const express = require("express");
 const app = express();
 var cookieParser = require("cookie-parser");
-const port = process.env.PORT || 1993;
 const cors = require("cors");
 const dns = require("dns");
 const dbConfig = require("./dbConfig");
@@ -14,12 +13,15 @@ const notFound = require("./middleware/notFound");
 const errorHandler = require("./middleware/errorHandler");
 
 require("dotenv").config();
+const port = process.env.PORT || 1993;
 
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+const clientOrigin = process.env.CLIENT_URL?.trim() || "http://localhost:3000";
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: clientOrigin,
     credentials: true,
   }),
 );

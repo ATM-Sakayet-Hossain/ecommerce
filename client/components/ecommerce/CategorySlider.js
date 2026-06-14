@@ -8,6 +8,7 @@ import {
 } from "react-icons/fa";
 import CategoryCard from "../UI/CategoryCard";
 import { apiClient } from "@/lib/apiClient";
+import { API, apiPath } from "@/lib/routes";
 
 const CategorySlider = () => {
   const scrollRef = useRef(null);
@@ -37,7 +38,7 @@ const CategorySlider = () => {
       try {
         setIsLoading(true);
         setError("");
-        const payload = await apiClient.get("/category/get", {
+        const payload = await apiClient.get(apiPath(API.category.get), {
           revalidate: 60 * 5,
         });
 

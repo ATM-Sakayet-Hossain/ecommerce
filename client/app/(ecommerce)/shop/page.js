@@ -7,6 +7,7 @@ import {
   FaRegArrowAltCircleRight,
 } from "react-icons/fa";
 import { apiClient } from "@/lib/apiClient";
+import { API, apiPath } from "@/lib/routes";
 import ProductCard from "@/components/UI/ProductCard";
 import PageContainer from "@/components/layout/PageContainer";
 
@@ -41,7 +42,7 @@ const Page = () => {
       try {
         setIsLoading(true);
         setError("");
-        const payload = await apiClient.get("/product/get", {
+        const payload = await apiClient.get(apiPath(API.product.get), {
           revalidate: 60 * 5,
         });
         const nextProducts =
